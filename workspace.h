@@ -16,10 +16,10 @@ private:
     void setupUI();
     void generateDataLines(int dataCount);
 
-    QVBoxLayout *mainLayout;
+    QVBoxLayout *mainLayout; // Основное рабочее пространство
     QVBoxLayout *dataArea;  // Для хранения строк данных
 
-private slots:
+private slots: // Слоты для обработки cобытий
     void onAddClicked();
     void onOpenClicked();
     void onDeleteClicked();

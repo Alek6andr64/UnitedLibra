@@ -14,7 +14,7 @@ public:
 private:
     void setupUI();
 
-    QVBoxLayout *mainLayout;
+    QVBoxLayout *mainLayout; // Основная область сайдбара
 
 };
 

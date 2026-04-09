@@ -8,3 +8,4 @@ build/*
 *.temp
 *.swp
 *.~*
+.qtcreator/CMakeLists.txt.user
