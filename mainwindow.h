@@ -9,6 +9,7 @@ QT_END_NAMESPACE
 
 class Workspace;
 class Sidebar;
+class Database;
 
 class MainWindow : public QMainWindow
 {
@@ -22,6 +23,7 @@ private:
     Ui::MainWindow *ui;
     Workspace *workspace;
     Sidebar *sidebar;
+    Database *database;
 };
 
 #endif

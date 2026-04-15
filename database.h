@@ -3,6 +3,8 @@
 
 #include <QObject>
 #include <QSqlQuery>
+#include <QSqlError>
+#include <QSqlTableModel>
 
 class Database : public QObject
 {
@@ -16,10 +18,14 @@ public:
     void disconnect();
 
 
-    bool createTable();
+    bool createTables();
+    bool addBook(const QString &title, const QString &isbn, int publisher_id, int year);
+    bool deleteBook(int id);
+    QVector<QMap<QString, QVariant>> getAllBooks();
 
 private:
     QSqlDatabase db;
+    QSqlTableModel *model;
 };
 
 #endif
