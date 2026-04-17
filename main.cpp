@@ -7,7 +7,7 @@
 void printAllBooks(Database &db)
 {
     qDebug() << "\n Список книг";
-    auto books = db.getAllBooks();
+    auto books = db.getBooks("");
 
     if (books.isEmpty()) {
         qDebug() << "Нет книг в базе";

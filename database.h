@@ -17,11 +17,11 @@ public:
     bool connect();
     void disconnect();
 
-
     bool createTables();
     bool addBook(const QString &title, const QString &isbn, int publisher_id, int year);
     bool deleteBook(int id);
-    QVector<QMap<QString, QVariant>> getAllBooks();
+    QVector<QMap<QString, QVariant>> getBooks(const QString &text);
+
 
 private:
     QSqlDatabase db;

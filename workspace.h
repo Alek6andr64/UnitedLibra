@@ -31,13 +31,19 @@ private:
     QVector<QPair<QCheckBox*, QVector<QLabel*>>> generateDataLines(int dataCount, int currentPage); // Создание линий данных
     QVector<QPair<QCheckBox*, QVector<QLabel*>>> fillDataLines(int dataCount, int currentPage,
             QVector<QPair<QCheckBox*, QVector<QLabel*>>> allDataLines, QVector<QMap<QString, QVariant>> books); // Заполнение линии данных
+    void updateAvailableResults();
 
     QVBoxLayout *mainLayout; // Основное рабочее пространство
     QVBoxLayout *dataArea;  // Для хранения строк данных
     QVector<QMap<QString, QVariant>> books; // Загруженные из базы данных книги
+    QLabel *pageInfo = nullptr;
 
     int currentPage = 1; // Текущая страница
     int maxPages = 1; // Максимум страниц
+
+    int currentResults = 0; // Доступные записи
+    int maxResults = 0; // Всего записей
+
     QVector<QPushButton*> pagesButtons; // Вектор кнопок перемещения по страницам
     QVector<QPair<QCheckBox*, QVector<QLabel*>>> allDataLines; // Вектор линий данных
 
