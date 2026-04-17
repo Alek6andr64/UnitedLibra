@@ -32,6 +32,9 @@ void Workspace::setupFilters() {
     QLineEdit *filterEdit = new QLineEdit(this);
     QLineEdit *searchEdit = new QLineEdit(this);
 
+    // Задание исходного текста
+    filterEdit->setPlaceholderText(" Фильтрация");
+    searchEdit->setPlaceholderText(" Поиск");
 
     // Подключаем сигналы фильтрам
     connect(filterEdit, &QLineEdit::textChanged, this, &Workspace::onFilterTextChanged);
@@ -77,7 +80,7 @@ void Workspace::setupDataArea() {
     // Подключение к базе данных и получение таблицы
     Database db;
     db.connect();
-    books = db.getAllBooks();
+    books = db.getBooks("");
 
     // Подготовка и загрузка данных
     allDataLines = generateDataLines(10, 1);
@@ -93,6 +96,10 @@ void Workspace::setupPagesButtons() {
     if ((books.size() % 10) != 0)
         maxPages++;
 
+    // Вычисляем доступные записи
+    currentResults = books.size();
+    maxResults = books.size();
+
     // Кнопки перемещения по страницам
     QHBoxLayout *pagesLayout = new QHBoxLayout();
     QPushButton *firstBtn = new QPushButton("<<", this);
@@ -101,7 +108,7 @@ void Workspace::setupPagesButtons() {
     QPushButton *lastBtn = new QPushButton(">>", this);
 
     // Информация об отображаемых данных
-    QLabel *pageInfo = new QLabel(QString("Показано %1 из %1").arg(books.size()), this);
+    pageInfo = new QLabel(QString("Показано %1 из %2").arg(currentResults).arg(maxResults), this);
 
     // Кнопки страниц
     QPushButton *b1 = new QPushButton("1", this);
@@ -229,6 +236,14 @@ QVector<QPair<QCheckBox*, QVector<QLabel*>>> Workspace::fillDataLines(int dataCo
     return allDataLines;
 }
 
+void Workspace::updateAvailableResults()
+{
+    currentResults = books.size();
+    pageInfo->setText(QString("Показано %1 из %2").arg(currentResults).arg(maxResults));
+
+    emit dataChanged();
+}
+
 void Workspace::onAddClicked()
 {
     // Добавить запись
@@ -348,4 +363,22 @@ void Workspace::onFilterTextChanged(const QString &text)
 void Workspace::onSearchTextChanged(const QString &text)
 {
     // Поиск
+    qDebug() << text;
+
+    Database db;
+    db.connect();
+    books = db.getBooks(text);
+
+    if (pageInfo) {
+        updateAvailableResults();
+    }
+
+    maxPages = books.size() / 10;
+    if ((books.size() % 10) != 0)
+        maxPages++;
+
+    currentPage = 1;
+    fillDataLines(10, currentPage, allDataLines, books);
+    onUpdatePagesButtons();
+    emit dataChanged();
 }

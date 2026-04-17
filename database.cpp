@@ -94,10 +94,31 @@ bool Database::deleteBook(int id)
     return deleted;
 }
 
-QVector<QMap<QString, QVariant>> Database::getAllBooks()
+QVector<QMap<QString, QVariant>> Database::getBooks(const QString &text)
 {
     QVector<QMap<QString, QVariant>> books;
-    QSqlQuery query("SELECT id, title, isbn, publisher_id, year FROM books ORDER BY id");
+        QSqlQuery query;
+    if (text.isEmpty()) {
+        query.prepare("SELECT id, title, isbn, publisher_id, year FROM books ORDER BY id");
+    } else {
+        query.prepare("SELECT id, title, isbn, publisher_id, year FROM books "
+                "WHERE id GLOB ? OR title GLOB ? OR isbn GLOB ? OR publisher_id GLOB ? OR year GLOB ? ORDER BY id;"
+                );
+
+        QString pattern = "*" + text + "*";
+
+        for (int j = 0; j < 5; j++) {
+            query.addBindValue(pattern);
+        }
+
+
+
+    }
+
+    if (!query.exec()) {
+        qDebug() << "Ошибка выполнения запроса:" << query.lastError().text();
+        return books;
+    }
 
     while (query.next()) {
         QMap<QString, QVariant> book;
@@ -113,4 +134,5 @@ QVector<QMap<QString, QVariant>> Database::getAllBooks()
 
     return books;
 }
+
 
