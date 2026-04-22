@@ -1,6 +1,7 @@
 #ifndef WORKSPACE_H
 #define WORKSPACE_H
 
+#include "dataline.h"
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -29,10 +30,10 @@ private:
     void setupDataArea();
     void setupPagesButtons();
 
-    QVector<QPair<QCheckBox*, QVector<QLabel*>>> generateDataLines(int dataCount, int currentPage); // Создание линий данных
-    QVector<QPair<QCheckBox*, QVector<QLabel*>>> fillDataLines(int dataCount, int currentPage,
-            QVector<QPair<QCheckBox*, QVector<QLabel*>>> allDataLines, QVector<QMap<QString, QVariant>> books); // Заполнение линии данных
+    void generateDataLines(int dataCount, int currentPage); // Создание линий данных
+    void fillDataLines(int dataCount, int currentPage, QVector<QMap<QString, QVariant>> books); // Заполнение линии данных
     void updateAvailableResults();
+
 
     QVBoxLayout *mainLayout; // Основное рабочее пространство
     QVBoxLayout *dataArea;  // Для хранения строк данных
@@ -46,7 +47,8 @@ private:
     int maxResults = 0; // Всего записей
 
     QVector<QPushButton*> pagesButtons; // Вектор кнопок перемещения по страницам
-    QVector<QPair<QCheckBox*, QVector<QLabel*>>> allDataLines; // Вектор линий данных
+    QVector<DataLine*> allDataLines;
+    QVector<int> selectedBookIds; // Вектор для хранения ID выбранных книг
 
 private slots:
     // Слоты обрабатывающие взаимодействия с основными кнопками
@@ -61,9 +63,16 @@ private slots:
     void onFirstClicked();
     void onLastClicked();
     void onPageClicked();
+
+    // Слоты для фильтрации и поиска
     void onFilterTextChanged(const QString &text);
     void onSearchTextChanged(const QString &text);
+
+    // Слот для обновления кнопок страниц
     void onUpdatePagesButtons();
+
+    // Слот для добавления id книги в список выбранных
+    void onDataLineToggled(bool checked, int bookId);
 };
 
 #endif

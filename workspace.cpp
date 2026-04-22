@@ -1,16 +1,6 @@
 #include "workspace.h"
 #include "database.h"
 
-#include <QFrame>
-#include <QLabel>
-#include <QPushButton>
-#include <QLineEdit>
-#include <QCheckBox>
-#include <QSpacerItem>
-#include <QMessageBox>
-#include <QCoreApplication>
-#include <QDebug>
-
 Workspace::Workspace(QWidget *parent) : QWidget(parent)
 {
     setupUI();
@@ -82,15 +72,20 @@ void Workspace::setupDataArea() {
     db.connect();
     books = db.getBooks("");
 
-    // Подготовка и загрузка данных
-    allDataLines = generateDataLines(10, 1);
-    fillDataLines(10, 1, allDataLines, books);
+    // Создание линий данных и их заполнение
+    generateDataLines(10, 1);
+    fillDataLines(10, 1, books);
 
-    // Добавляем данные в отображение
+    // Убираем отступы между линиями данных
+    dataArea->setSpacing(0);
+    dataArea->setContentsMargins(0, 0, 0, 0);
+
+    // Добавляем область данных в отображение
     mainLayout->addLayout(dataArea, 7);
 }
 
 void Workspace::setupPagesButtons() {
+
     // Вычисляем максимум страниц
     maxPages = books.size() / 10;
     if ((books.size() % 10) != 0)
@@ -150,52 +145,23 @@ void Workspace::setupPagesButtons() {
     onUpdatePagesButtons();
 }
 
-QVector<QPair<QCheckBox*, QVector<QLabel*>>> Workspace::generateDataLines(int dataCount, int currentPage)
+void Workspace::generateDataLines(int dataCount, int currentPage)
 {
-    // Объявляем вектор хранящий линии данных
-    QVector<QPair<QCheckBox*, QVector<QLabel*>>> allDataLines;
-
     // Создание необходимого количества линий данных
     int initialData = (dataCount * currentPage) - dataCount;
+
     for (int x = initialData; x < dataCount * currentPage; x++) {
-        // Объявляем вектор хранящий текст в линии данных
-        QVector<QLabel*> labels;
+        // Создаем новый объект линии данных
+        DataLine *dataLine = new DataLine(this);
+        connect(dataLine, &DataLine::toggled, this, &Workspace::onDataLineToggled);
 
-        // Чекбокс и текст в данных
-        QCheckBox *checkBox = new QCheckBox(this);
-        QLabel *numberLabel = new QLabel(this);
-        QLabel *yearLabel = new QLabel(this);
-        QLabel *codeLabel = new QLabel(this);
-        QLabel *anotherYearLabel = new QLabel(this);
-        QLabel *authorLabel = new QLabel(this);
-        QLabel *publisherLabel = new QLabel(this);
-        QLabel *genreLabel = new QLabel(this);
-        QLabel *countLabel = new QLabel(this);
-
-        // Добавляем  текст в вектор
-        labels << numberLabel << yearLabel << codeLabel << anotherYearLabel
-               << authorLabel << publisherLabel << genreLabel << countLabel;
-
-        QHBoxLayout *dataLine = new QHBoxLayout();
-
-        // Добавляем линию данных в отображение
-        dataLine->addStretch(2);
-        dataLine->addWidget(checkBox, 2);
-        for(QLabel* label : labels) {
-            dataLine->addWidget(label, 2);
-        }
-
-        dataArea->addLayout(dataLine);
-
-        // Добавляем чекбокс в вектор линий данных
-        allDataLines.append(qMakePair(checkBox, labels));
+        // Добавляем объект в отображение и в вектор
+        dataArea->addWidget(dataLine);
+        allDataLines.append(dataLine);
     }
-
-    return allDataLines;
 }
 
-QVector<QPair<QCheckBox*, QVector<QLabel*>>> Workspace::fillDataLines(int dataCount, int currentPage,
-        QVector<QPair<QCheckBox*, QVector<QLabel*>>> allDataLines, QVector<QMap<QString, QVariant>> books)
+void Workspace::fillDataLines(int dataCount, int currentPage, QVector<QMap<QString, QVariant>> books)
 {
     // Вычисление количества строк данных
     int initialData = (dataCount * currentPage) - dataCount;
@@ -203,37 +169,28 @@ QVector<QPair<QCheckBox*, QVector<QLabel*>>> Workspace::fillDataLines(int dataCo
 
     for (int x = initialData; x < dataCount * currentPage; x++) {
         if (y < allDataLines.size()) {
-            QVector<QLabel*> labels = allDataLines[y].second;
             if (x < books.size()) {
-                // Заполняем линии данными если есть
-                if (labels.size() >= 8) {
-                    labels[0]->setText(QString("%1").arg(books[x]["id"].toInt()));
-                    labels[1]->setText(books[x]["title"].toString());
-                    labels[2]->setText(books[x]["isbn"].toString());
-                    labels[3]->setText(QString("%1").arg(books[x]["year"].toInt()));
-                    labels[4]->setText("Автор");
-                    labels[5]->setText(QString("%1").arg(books[x]["publisher_id"].toInt()));
-                    labels[6]->setText("Жанр");
-                    labels[7]->setText("Количество копий");
-                }
+                // Заполняем линии данными
+                int bookId = books[x]["id"].toInt();
+                allDataLines[y]->setData(books[x], bookId);
+
+                // Восстанавливаем состояние чекбокса
+                bool isSelected = selectedBookIds.contains(bookId);
+                allDataLines[y]->setSelected(isSelected);
+                allDataLines[y]->setChecked(isSelected);
             } else {
-                // Заполняем плейсхолдерами если данных нет
-                if (labels.size() >= 8) {
-                    labels[0]->setText(QString("%1").arg(x+1, 2, 10, QChar('0')));
-                    labels[1]->setText("Название");
-                    labels[2]->setText("ISBN");
-                    labels[3]->setText("Год");
-                    labels[4]->setText("Автор");
-                    labels[5]->setText("Издатель");
-                    labels[6]->setText("Жанр");
-                    labels[7]->setText("Количество копий");
-                }
+                // Скрываем строки если там нет данных
+                allDataLines[y]->reset();
             }
             y++;
         }
     }
 
-    return allDataLines;
+    // Скрываем оставшиеся строки
+    while (y < allDataLines.size()) {
+        allDataLines[y]->reset();
+        y++;
+    }
 }
 
 void Workspace::updateAvailableResults()
@@ -269,7 +226,7 @@ void Workspace::onPrevClicked()
     // Переключаемся на страницу назад если это не минимальная
     if (currentPage > 1) {
         currentPage--;
-        fillDataLines(10, currentPage, allDataLines, books);
+        fillDataLines(10, currentPage, books);
         onUpdatePagesButtons();
         emit dataChanged();
     }
@@ -280,7 +237,7 @@ void Workspace::onNextClicked()
     // Переключаемся на страницу вперед если это не последняя
     if (currentPage < maxPages) {
         currentPage++;
-        fillDataLines(10, currentPage, allDataLines, books);
+        fillDataLines(10, currentPage, books);
         onUpdatePagesButtons();
         emit dataChanged();
     }
@@ -290,7 +247,7 @@ void Workspace::onFirstClicked()
 {
     // Переключение на 1 страницу
     currentPage = 1;
-    fillDataLines(10, currentPage, allDataLines, books);
+    fillDataLines(10, currentPage, books);
     onUpdatePagesButtons();
     emit dataChanged();
 }
@@ -299,7 +256,7 @@ void Workspace::onLastClicked()
 {
     // Переключаемся на последнюю страницу
     currentPage = maxPages;
-    fillDataLines(10, currentPage, allDataLines, books);
+    fillDataLines(10, currentPage, books);
     onUpdatePagesButtons();
     emit dataChanged();
 }
@@ -313,7 +270,7 @@ void Workspace::onPageClicked()
         int pageNum = clickedButton->text().toInt();
         if (pageNum != currentPage) {
             currentPage = pageNum;
-            fillDataLines(10, currentPage, allDataLines, books);
+            fillDataLines(10, currentPage, books);
             onUpdatePagesButtons();
             emit dataChanged();
         }
@@ -378,7 +335,20 @@ void Workspace::onSearchTextChanged(const QString &text)
         maxPages++;
 
     currentPage = 1;
-    fillDataLines(10, currentPage, allDataLines, books);
+    fillDataLines(10, currentPage, books);
     onUpdatePagesButtons();
     emit dataChanged();
+}
+
+void Workspace::onDataLineToggled(bool checked, int bookId)
+{
+    if (checked) {
+        if (!selectedBookIds.contains(bookId)) {
+            selectedBookIds.append(bookId);
+        }
+    } else {
+        selectedBookIds.removeAll(bookId);
+    }
+
+    qDebug() << "Выбранные id книг:" << selectedBookIds;
 }
