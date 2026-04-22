@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include <QCheckBox>
 #include <QLabel>
+#include <QLineEdit>
 
 class Workspace : public QWidget
 {
