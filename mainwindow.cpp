@@ -2,6 +2,7 @@
 #include "./ui_mainwindow.h"
 #include "workspace.h"
 #include "sidebar.h"
+#include "database.h"
 
 #include <QHBoxLayout>
 
@@ -24,6 +25,9 @@ MainWindow::MainWindow(QWidget *parent)
     rootLayout->addWidget(workspace, 3);
 
     setCentralWidget(central);
+
+    database = new Database();
+    database->connect();
 }
 
 MainWindow::~MainWindow()
