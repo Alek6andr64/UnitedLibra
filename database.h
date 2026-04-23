@@ -19,7 +19,7 @@ public:
 
     bool createTables();
     bool addBook(const QString &title, const QString &isbn, int publisher_id, int year);
-    bool deleteBook(int id);
+    QVector<int> deleteBooks(QVector<int> ids);
     QVector<QMap<QString, QVariant>> getBooks(const QString &text);
 
 

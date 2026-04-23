@@ -1,7 +1,9 @@
 #ifndef WORKSPACE_H
 #define WORKSPACE_H
 
+#include "database.h"
 #include "dataline.h"
+#include "messagebox.h"
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -9,6 +11,8 @@
 #include <QCheckBox>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMessageBox>
+
 
 class Workspace : public QWidget
 {
@@ -30,21 +34,29 @@ private:
     void setupDataArea();
     void setupPagesButtons();
 
-    void generateDataLines(int dataCount, int currentPage); // Создание линий данных
-    void fillDataLines(int dataCount, int currentPage, QVector<QMap<QString, QVariant>> books); // Заполнение линии данных
+    // Создание линий данных
+    void generateDataLines(int dataCount, int currentPage);
+    // Заполнение линии данных
     void updateAvailableResults();
-
+    void fillDataLines(int dataCount, int currentPage, QVector<QMap<QString, QVariant>> books);
+    // Обновление линий данных
+    void updateData();
 
     QVBoxLayout *mainLayout; // Основное рабочее пространство
     QVBoxLayout *dataArea;  // Для хранения строк данных
+    Database db;
     QVector<QMap<QString, QVariant>> books; // Загруженные из базы данных книги
     QLabel *pageInfo = nullptr;
+
+    QString filterText = "";
 
     int currentPage = 1; // Текущая страница
     int maxPages = 1; // Максимум страниц
 
     int currentResults = 0; // Доступные записи
     int maxResults = 0; // Всего записей
+
+    bool doNotShowUpdateInfo = 1; // Показывать ли информацию о обновлении данных
 
     QVector<QPushButton*> pagesButtons; // Вектор кнопок перемещения по страницам
     QVector<DataLine*> allDataLines;
