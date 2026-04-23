@@ -1,5 +1,4 @@
 #include "workspace.h"
-#include "database.h"
 
 Workspace::Workspace(QWidget *parent) : QWidget(parent)
 {
@@ -68,9 +67,8 @@ void Workspace::setupDataArea() {
     dataArea = new QVBoxLayout();
 
     // Подключение к базе данных и получение таблицы
-    Database db;
     db.connect();
-    books = db.getBooks("");
+    books = db.getBooks(filterText);
 
     // Создание линий данных и их заполнение
     generateDataLines(10, 1);
@@ -196,6 +194,7 @@ void Workspace::fillDataLines(int dataCount, int currentPage, QVector<QMap<QStri
 void Workspace::updateAvailableResults()
 {
     currentResults = books.size();
+    maxResults = db.getBooks("").size();
     pageInfo->setText(QString("Показано %1 из %2").arg(currentResults).arg(maxResults));
 
     emit dataChanged();
@@ -212,13 +211,47 @@ void Workspace::onOpenClicked()
 }
 
 void Workspace::onDeleteClicked()
+{ 
+    // Вызываем окно предупреждения и получаем результат ее нажатия
+    int result = MessageBox::showDeleteConfirmation(this);
+    int booksToDelete = selectedBookIds.size();
+
+    // Если пользователь согласен то удаляем записи
+    if (result == QMessageBox::Yes) {
+        QVector<int> deletedBooksIDs = db.deleteBooks(selectedBookIds);
+        int deletedBooksCount = deletedBooksIDs.size();
+
+        // Вызываем ошибку если что то пошло не так
+        if (deletedBooksCount != booksToDelete) {
+            MessageBox::showDeleteError(this, deletedBooksCount, booksToDelete);
+        }
+
+        // Удаляем из вектора записи
+        for (int id : deletedBooksIDs) {
+            auto it = std::remove(selectedBookIds.begin(), selectedBookIds.end(), id);
+            selectedBookIds.erase(it, selectedBookIds.end());
+        }
+
+        // Обновляем данные
+        updateData();
+    }
+}
+
+void Workspace::updateData()
 {
-    // Удалить запись
+    books = db.getBooks(filterText);
+    fillDataLines(10, currentPage, books);
+    updateAvailableResults();
+    onUpdatePagesButtons();
+    emit dataChanged();
 }
 
 void Workspace::onUpdateClicked()
 {
-    // Обновление данных
+    if (doNotShowUpdateInfo) {
+        doNotShowUpdateInfo = MessageBox::showUpdateInfo(this);
+    }
+    updateData();
 }
 
 void Workspace::onPrevClicked()
@@ -226,9 +259,9 @@ void Workspace::onPrevClicked()
     // Переключаемся на страницу назад если это не минимальная
     if (currentPage > 1) {
         currentPage--;
-        fillDataLines(10, currentPage, books);
-        onUpdatePagesButtons();
-        emit dataChanged();
+
+        // Обновляем данные
+        updateData();
     }
 }
 
@@ -237,9 +270,9 @@ void Workspace::onNextClicked()
     // Переключаемся на страницу вперед если это не последняя
     if (currentPage < maxPages) {
         currentPage++;
-        fillDataLines(10, currentPage, books);
-        onUpdatePagesButtons();
-        emit dataChanged();
+
+        // Обновляем данные
+        updateData();
     }
 }
 
@@ -247,18 +280,18 @@ void Workspace::onFirstClicked()
 {
     // Переключение на 1 страницу
     currentPage = 1;
-    fillDataLines(10, currentPage, books);
-    onUpdatePagesButtons();
-    emit dataChanged();
+
+    // Обновляем данные
+    updateData();
 }
 
 void Workspace::onLastClicked()
 {
     // Переключаемся на последнюю страницу
     currentPage = maxPages;
-    fillDataLines(10, currentPage, books);
-    onUpdatePagesButtons();
-    emit dataChanged();
+
+    // Обновляем данные
+    updateData();
 }
 
 void Workspace::onPageClicked()
@@ -270,9 +303,9 @@ void Workspace::onPageClicked()
         int pageNum = clickedButton->text().toInt();
         if (pageNum != currentPage) {
             currentPage = pageNum;
-            fillDataLines(10, currentPage, books);
-            onUpdatePagesButtons();
-            emit dataChanged();
+
+            // Обновляем данные
+            updateData();
         }
     }
 }
@@ -301,6 +334,7 @@ void Workspace::onUpdatePagesButtons()
                 // Выключение кнопок если таких страниц нет
                 pagesButtons[2 + i]->setText(" ");
                 pagesButtons[2 + i]->setEnabled(false);
+                pagesButtons[2 + i]->setStyleSheet("");
             }
         }
 
@@ -319,12 +353,11 @@ void Workspace::onFilterTextChanged(const QString &text)
 
 void Workspace::onSearchTextChanged(const QString &text)
 {
+    filterText = text;
     // Поиск
-    qDebug() << text;
+    qDebug() << filterText;
 
-    Database db;
-    db.connect();
-    books = db.getBooks(text);
+    books = db.getBooks(filterText);
 
     if (pageInfo) {
         updateAvailableResults();
@@ -335,13 +368,14 @@ void Workspace::onSearchTextChanged(const QString &text)
         maxPages++;
 
     currentPage = 1;
-    fillDataLines(10, currentPage, books);
-    onUpdatePagesButtons();
-    emit dataChanged();
+
+    // Обновляем данные
+    updateData();
 }
 
 void Workspace::onDataLineToggled(bool checked, int bookId)
 {
+    // Если чекбокс выключен, то добавляем id книги в массив, если включена, то удаляем оттуда.
     if (checked) {
         if (!selectedBookIds.contains(bookId)) {
             selectedBookIds.append(bookId);
