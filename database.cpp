@@ -121,18 +121,60 @@ QVector<QMap<QString, QVariant>> Database::getBooks(const QString &text)
 
     // Готовим запрос на получение книг без фильтра и с ним
     QSqlQuery query;
+
     if (text.isEmpty()) {
-        query.prepare("SELECT id, title, isbn, publisher_id, year FROM books ORDER BY id");
+        query.prepare(R"(
+            SELECT DISTINCT
+                b.id,
+                b.title,
+                b.isbn,
+                b.year,
+                b.publisher_id,
+                p.name as publisher_name,
+                GROUP_CONCAT(DISTINCT a.name) as authors,
+                GROUP_CONCAT(DISTINCT c.name) as categories
+            FROM books b
+            LEFT JOIN publisher p ON b.publisher_id = p.id
+            LEFT JOIN book_authors ba ON b.id = ba.book_id
+            LEFT JOIN authors a ON ba.author_id = a.id
+            LEFT JOIN book_categories bc ON b.id = bc.book_id
+            LEFT JOIN categories c ON bc.category_id = c.id
+            GROUP BY b.id
+            ORDER BY b.id
+        )");
     } else {
-        query.prepare("SELECT id, title, isbn, publisher_id, year FROM books "
-                "WHERE id GLOB ? OR title GLOB ? OR isbn GLOB ? OR publisher_id GLOB ? OR year GLOB ? ORDER BY id;"
-                );
+        query.prepare(R"(
+            SELECT DISTINCT
+                b.id,
+                b.title,
+                b.isbn,
+                b.year,
+                b.publisher_id,
+                p.name as publisher_name,
+                GROUP_CONCAT(DISTINCT a.name) as authors,
+                GROUP_CONCAT(DISTINCT c.name) as categories
+            FROM books b
+            LEFT JOIN publisher p ON b.publisher_id = p.id
+            LEFT JOIN book_authors ba ON b.id = ba.book_id
+            LEFT JOIN authors a ON ba.author_id = a.id
+            LEFT JOIN book_categories bc ON b.id = bc.book_id
+            LEFT JOIN categories c ON bc.category_id = c.id
+            WHERE b.id GLOB ?
+               OR b.title GLOB ?
+               OR b.isbn GLOB ?
+               OR b.year GLOB ?
+               OR p.name GLOB ?
+               OR a.name GLOB ?
+               OR c.name GLOB ?
+            GROUP BY b.id
+            ORDER BY b.id
+        )");
 
         // Делаем учет других символов
         QString pattern = "*" + text + "*";
 
         // Вставляем текст из фильтров в запрос
-        for (int j = 0; j < 5; j++) {
+        for (int i = 0; i < 7; ++i) {
             query.addBindValue(pattern);
         }
     }
@@ -145,11 +187,16 @@ QVector<QMap<QString, QVariant>> Database::getBooks(const QString &text)
     // Заполняем ключ - значение для последующей вставки в вектор
     while (query.next()) {
         QMap<QString, QVariant> book;
-        book["id"] = query.value(0);
-        book["title"] = query.value(1);
-        book["isbn"] = query.value(2);
-        book["publisher_id"] = query.value(3);
-        book["year"] = query.value(4);
+
+        book["id"] = query.value("id");
+        book["title"] = query.value("title");
+        book["isbn"] = query.value("isbn");
+        book["year"] = query.value("year");
+        book["publisher_id"] = query.value("publisher_id");
+        book["publisher_name"] = query.value("publisher_name");
+        book["authors"] = query.value("authors");
+        book["categories"] = query.value("categories");
+
         books.append(book);
     }
 

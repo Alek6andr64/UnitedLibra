@@ -5,6 +5,10 @@
 #include <QHBoxLayout>
 #include <QCheckBox>
 #include <QLabel>
+#include <QFontMetrics>
+#include <QRect>
+#include <QStringList>
+#include <QTextLine>
 
 class DataLine : public QWidget
 {
@@ -14,6 +18,7 @@ public:
     explicit DataLine(QWidget *parent = nullptr);
 
     void setData(const QMap<QString, QVariant>& bookData, int bookId);
+    void setElidedText(const QMap<QString, QVariant>& bookData, QString field, int index);
     void setSelected(bool selected);
     void setVisible(bool visible);
     void reset();
