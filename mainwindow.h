@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QTabWidget>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -24,6 +25,7 @@ private:
     Workspace *workspace;
     Sidebar *sidebar;
     Database *database;
+    QTabWidget *tabWidget;  // Добавляем QTabWidget
 };
 
 #endif
