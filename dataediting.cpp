@@ -16,48 +16,8 @@ void DataEditing::setupUI()
 
     setupForm();
     setupButtons();
+    setupDesign();
 
-    // стиль
-    setStyleSheet(
-        "QGroupBox {"
-        "    font-weight: bold;"
-        "    border: 2px solid #cccccc;"
-        "    border-radius: 8px;"
-        "    margin-top: 10px;"
-        "    padding-top: 10px;"
-        "}"
-        "QGroupBox::title {"
-        "    subcontrol-origin: margin;"
-        "    left: 10px;"
-        "    padding: 0 5px 0 5px;"
-        "}"
-        "QLineEdit, QSpinBox, QComboBox {"
-        "    padding: 5px;"
-        "    border: 1px solid #cccccc;"
-        "    border-radius: 4px;"
-        "    min-height: 25px;"
-        "}"
-        "QPushButton {"
-        "    padding: 8px 15px;"
-        "    border: none;"
-        "    border-radius: 5px;"
-        "    font-weight: bold;"
-        "}"
-        "QPushButton#saveBtn {"
-        "    background-color: #4CAF50;"
-        "    color: white;"
-        "}"
-        "QPushButton#saveBtn:hover {"
-        "    background-color: #45a049;"
-        "}"
-        "QPushButton#cancelBtn {"
-        "    background-color: #f44336;"
-        "    color: white;"
-        "}"
-        "QPushButton#cancelBtn:hover {"
-        "    background-color: #da190b;"
-        "}"
-        );
 }
 
 void DataEditing::setupForm()
@@ -144,11 +104,61 @@ void DataEditing::setupButtons()
     mainLayout->addLayout(buttonLayout);
 }
 
-void DataEditing::loadBookData(int bookId, const QString &title, const QString &isbn,
-                               int year, int publisher_id, const QString &author,
-                               const QString &genre, int copies)
+void DataEditing::setupDesign() {
+    setStyleSheet(
+        "QGroupBox {"
+        "    font-weight: bold;"
+        "    border: 2px solid #cccccc;"
+        "    border-radius: 8px;"
+        "    margin-top: 10px;"
+        "    padding-top: 10px;"
+        "}"
+        "QGroupBox::title {"
+        "    subcontrol-origin: margin;"
+        "    left: 10px;"
+        "    padding: 0 5px 0 5px;"
+        "}"
+        "QLineEdit, QSpinBox, QComboBox {"
+        "    padding: 5px;"
+        "    border: 1px solid #cccccc;"
+        "    border-radius: 4px;"
+        "    min-height: 25px;"
+        "}"
+        "QPushButton {"
+        "    padding: 8px 15px;"
+        "    border: none;"
+        "    border-radius: 5px;"
+        "    font-weight: bold;"
+        "}"
+        "QPushButton#saveBtn {"
+        "    background-color: #4CAF50;"
+        "    color: white;"
+        "}"
+        "QPushButton#saveBtn:hover {"
+        "    background-color: #45a049;"
+        "}"
+        "QPushButton#cancelBtn {"
+        "    background-color: #f44336;"
+        "    color: white;"
+        "}"
+        "QPushButton#cancelBtn:hover {"
+        "    background-color: #da190b;"
+        "}"
+    );
+}
+
+
+void DataEditing::loadBookData(int bookId, const QMap<QString, QVariant> &bookData)
 {
     currentBookId = bookId;
+
+    QString title = bookData["title"].toString();
+    QString isbn = bookData["isbn"].toString();
+    int year = bookData["year"].toInt();
+    int publisher_id = bookData["publisher_id"].toInt();
+    QString author = bookData["author_name"].toString();
+    QString genre =bookData["genre_name"].toString();
+    int copies = bookData["copy_count"].toInt();
 
     // Заполняем поля
     bookIdLabel->setText(QString::number(bookId));

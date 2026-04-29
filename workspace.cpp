@@ -246,16 +246,7 @@ void Workspace::openEditingTab(int bookId, const QMap<QString, QVariant> &bookDa
     DataEditing *editTab = new DataEditing(tabWidget);
 
     // Загружаем данные книги
-    editTab->loadBookData(
-        bookId,
-        bookData["title"].toString(),
-        bookData["isbn"].toString(),
-        bookData["year"].toInt(),
-        bookData["publisher_id"].toInt(),
-        bookData["author_name"].toString(),
-        bookData["genre_name"].toString(),
-        bookData["copy_count"].toInt()
-        );
+    editTab->loadBookData(bookId, bookData);
 
     // Подключаем сигнал сохранения для обновления основной таблицы
     connect(editTab, &DataEditing::dataSaved, this, &Workspace::onUpdateClicked);
@@ -270,9 +261,7 @@ void Workspace::openEditingTab(int bookId, const QMap<QString, QVariant> &bookDa
     });
 
     // Добавляем вкладку
-    QString tabTitle = QString("✏️ %1 (ID: %2)")
-                           .arg(bookData["title"].toString().left(25))
-                           .arg(bookId);
+    QString tabTitle = QString("✏️ %1").arg(bookData["title"].toString().left(25));
 
     int index = tabWidget->addTab(editTab, tabTitle);
     tabWidget->setCurrentIndex(index);
@@ -284,46 +273,32 @@ void Workspace::onOpenClicked()
 {
     // Проверяем, выбрана ли хотя бы одна книга
     if (selectedBookIds.isEmpty()) {
-        QMessageBox::information(this, "Информация",
-                                 "Пожалуйста, выберите книгу для просмотра/редактирования.");
+        QMessageBox::information(this, "Информация", "Пожалуйста, выберите книгу для просмотра/редактирования.");
         return;
     }
 
-    // Если выбрано несколько книг, предупреждаем
-    if (selectedBookIds.size() > 1) {
-        QMessageBox::StandardButton reply = QMessageBox::question(
-            this,
-            "Множественный выбор",
-            QString("Вы выбрали %1 книги. Открыть только первую?").arg(selectedBookIds.size()),
-            QMessageBox::Yes | QMessageBox::No
-            );
+    for (int bookId: selectedBookIds) {
 
-        if (reply == QMessageBox::No) {
-            return;
+        // Находим данные книги в текущем списке
+        QMap<QString, QVariant> bookData;
+        bool found = false;
+
+        for (const auto &book : books) {
+            if (book["id"].toInt() == bookId) {
+                bookData = book;
+                found = true;
+                break;
+            }
         }
-    }
 
-    // Берем ID первой выбранной книги
-    int bookId = selectedBookIds.first();
-
-    // Находим данные книги в текущем списке
-    QMap<QString, QVariant> bookData;
-    bool found = false;
-
-    for (const auto &book : books) {
-        if (book["id"].toInt() == bookId) {
-            bookData = book;
-            found = true;
-            break;
+        if (found) {
+            openEditingTab(bookId, bookData);
+        } else {
+            QMessageBox::warning(this, "Ошибка", "Не удалось найти данные выбранной книги.");
         }
-    }
-
-    if (found) {
-        openEditingTab(bookId, bookData);
-    } else {
-        QMessageBox::warning(this, "Ошибка", "Не удалось найти данные выбранной книги.");
     }
 }
+
 
 void Workspace::onDeleteClicked()
 {

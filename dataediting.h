@@ -22,10 +22,9 @@ class DataEditing : public QWidget
 public:
     explicit DataEditing(QWidget *parent = nullptr);
 
+
     // Загрузить данные книги для редактирования
-    void loadBookData(int bookId, const QString &title, const QString &isbn,
-                      int year, int publisher_id, const QString &author = "",
-                      const QString &genre = "", int copies = 0);
+    void loadBookData(int bookId, const QMap<QString, QVariant> &bookData);
 
 signals:
     void dataSaved();  // Сигнал после сохранения
@@ -39,6 +38,7 @@ private:
     void setupUI();
     void setupForm();
     void setupButtons();
+    void setupDesign();
     bool validateInputs();
     bool saveToDatabase();
 

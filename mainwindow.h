@@ -11,6 +11,7 @@ QT_END_NAMESPACE
 class Workspace;
 class Sidebar;
 class Database;
+class Tabs;
 
 class MainWindow : public QMainWindow
 {
@@ -25,7 +26,8 @@ private:
     Workspace *workspace;
     Sidebar *sidebar;
     Database *database;
-    QTabWidget *tabWidget;  // Добавляем QTabWidget
+    Tabs *tabSpace;
+    QTabWidget *tabWidget;
 };
 
 #endif

@@ -3,6 +3,7 @@
 #include "workspace.h"
 #include "sidebar.h"
 #include "database.h"
+#include "tabs.h"
 
 #include <QHBoxLayout>
 
@@ -22,27 +23,14 @@ MainWindow::MainWindow(QWidget *parent)
     sidebar = new Sidebar(central);
     rootLayout->addWidget(sidebar, 1);
 
-    // Создаем QTabWidget для вкладок
-    tabWidget = new QTabWidget(central);
+    tabSpace = new Tabs();
+    tabWidget = tabSpace->tabWidget;
 
     // Рабочая область (главная вкладка)
     workspace = new Workspace(tabWidget);
     tabWidget->addTab(workspace, "Книги");
 
-    // Настройка вкладок (можно закрывать)
-    tabWidget->setTabsClosable(true);
-    tabWidget->setMovable(true);
-
-    // Подключаем сигнал закрытия вкладки
-    connect(tabWidget, &QTabWidget::tabCloseRequested, this, [this](int index) {
-        QWidget *widget = tabWidget->widget(index);
-        if (widget != workspace) {  // Не закрываем главную вкладку
-            tabWidget->removeTab(index);
-            delete widget;
-        }
-    });
-
-    rootLayout->addWidget(tabWidget, 3);
+    rootLayout->addWidget(tabSpace, 3);
 
     setCentralWidget(central);
 
