@@ -1,4 +1,7 @@
 #include "workspace.h"
+#include "dataediting.h"
+#include <QTabWidget>
+#include <QDebug>
 
 Workspace::Workspace(QWidget *parent) : QWidget(parent)
 {
@@ -202,16 +205,128 @@ void Workspace::updateAvailableResults()
 
 void Workspace::onAddClicked()
 {
-    // Добавить запись
+    // Добавить запись (пока пусто)
+    QMessageBox::information(this, "Информация", "Функция добавления в разработке");
+}
+
+void Workspace::openEditingTab(int bookId, const QMap<QString, QVariant> &bookData)
+{
+    // Находим родительский QTabWidget
+    QTabWidget *tabWidget = nullptr;
+    QWidget *parent = this->parentWidget();
+
+    // Поднимаемся по иерархии виджетов, пока не найдем QTabWidget
+    while (parent) {
+        tabWidget = qobject_cast<QTabWidget*>(parent);
+        if (tabWidget) {
+            break;
+        }
+        parent = parent->parentWidget();
+    }
+
+    if (!tabWidget) {
+        qDebug() << "Не найден QTabWidget для открытия вкладки";
+        QMessageBox::warning(this, "Ошибка", "Не удалось открыть вкладку редактирования");
+        return;
+    }
+
+    // Проверяем, не открыта ли уже вкладка с этой книгой
+    for (int i = 0; i < tabWidget->count(); ++i) {
+        DataEditing *existingTab = qobject_cast<DataEditing*>(tabWidget->widget(i));
+        if (existingTab) {
+            // Проверяем по заголовку вкладки
+            if (tabWidget->tabText(i).contains(QString::number(bookId))) {
+                tabWidget->setCurrentIndex(i);
+                return;
+            }
+        }
+    }
+
+    // Создаем новую вкладку
+    DataEditing *editTab = new DataEditing(tabWidget);
+
+    // Загружаем данные книги
+    editTab->loadBookData(
+        bookId,
+        bookData["title"].toString(),
+        bookData["isbn"].toString(),
+        bookData["year"].toInt(),
+        bookData["publisher_id"].toInt(),
+        bookData["author_name"].toString(),
+        bookData["genre_name"].toString(),
+        bookData["copy_count"].toInt()
+        );
+
+    // Подключаем сигнал сохранения для обновления основной таблицы
+    connect(editTab, &DataEditing::dataSaved, this, &Workspace::onUpdateClicked);
+
+    // Подключаем сигнал закрытия вкладки
+    connect(editTab, &DataEditing::editingFinished, this, [this, tabWidget, editTab]() {
+        int index = tabWidget->indexOf(editTab);
+        if (index != -1) {
+            tabWidget->removeTab(index);
+            delete editTab;
+        }
+    });
+
+    // Добавляем вкладку
+    QString tabTitle = QString("✏️ %1 (ID: %2)")
+                           .arg(bookData["title"].toString().left(25))
+                           .arg(bookId);
+
+    int index = tabWidget->addTab(editTab, tabTitle);
+    tabWidget->setCurrentIndex(index);
+
+    qDebug() << "Открыта вкладка редактирования для книги ID:" << bookId;
 }
 
 void Workspace::onOpenClicked()
 {
-    // Просмотреть запись
+    // Проверяем, выбрана ли хотя бы одна книга
+    if (selectedBookIds.isEmpty()) {
+        QMessageBox::information(this, "Информация",
+                                 "Пожалуйста, выберите книгу для просмотра/редактирования.");
+        return;
+    }
+
+    // Если выбрано несколько книг, предупреждаем
+    if (selectedBookIds.size() > 1) {
+        QMessageBox::StandardButton reply = QMessageBox::question(
+            this,
+            "Множественный выбор",
+            QString("Вы выбрали %1 книги. Открыть только первую?").arg(selectedBookIds.size()),
+            QMessageBox::Yes | QMessageBox::No
+            );
+
+        if (reply == QMessageBox::No) {
+            return;
+        }
+    }
+
+    // Берем ID первой выбранной книги
+    int bookId = selectedBookIds.first();
+
+    // Находим данные книги в текущем списке
+    QMap<QString, QVariant> bookData;
+    bool found = false;
+
+    for (const auto &book : books) {
+        if (book["id"].toInt() == bookId) {
+            bookData = book;
+            found = true;
+            break;
+        }
+    }
+
+    if (found) {
+        openEditingTab(bookId, bookData);
+    } else {
+        QMessageBox::warning(this, "Ошибка", "Не удалось найти данные выбранной книги.");
+    }
 }
 
 void Workspace::onDeleteClicked()
-{ 
+{
     // Вызываем окно предупреждения и получаем результат ее нажатия
     int result = MessageBox::showDeleteConfirmation(this);
     int booksToDelete = selectedBookIds.size();
@@ -349,6 +464,7 @@ void Workspace::onUpdatePagesButtons()
 void Workspace::onFilterTextChanged(const QString &text)
 {
     // Фильтрация
+    Q_UNUSED(text);
 }
 
 void Workspace::onSearchTextChanged(const QString &text)

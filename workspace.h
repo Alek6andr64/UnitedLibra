@@ -13,7 +13,6 @@
 #include <QLineEdit>
 #include <QMessageBox>
 
-
 class Workspace : public QWidget
 {
     Q_OBJECT
@@ -41,6 +40,8 @@ private:
     void fillDataLines(int dataCount, int currentPage, QVector<QMap<QString, QVariant>> books);
     // Обновление линий данных
     void updateData();
+    // Открытие вкладки редактирования
+    void openEditingTab(int bookId, const QMap<QString, QVariant> &bookData);
 
     QVBoxLayout *mainLayout; // Основное рабочее пространство
     QVBoxLayout *dataArea;  // Для хранения строк данных
