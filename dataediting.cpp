@@ -1,6 +1,4 @@
 #include "dataediting.h"
-#include <QSqlQuery>
-#include <QSqlError>
 #include <QDebug>
 
 DataEditing::DataEditing(QWidget *parent) : QWidget(parent)
@@ -11,17 +9,19 @@ DataEditing::DataEditing(QWidget *parent) : QWidget(parent)
 void DataEditing::setupUI()
 {
     mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(20, 20, 20, 20);
-    mainLayout->setSpacing(15);
 
     setupForm();
     setupButtons();
     setupDesign();
-
 }
 
 void DataEditing::setupForm()
 {
+    // Устанавливаем отступы контента
+    mainLayout->setContentsMargins(20, 20, 20, 20);
+    mainLayout->setSpacing(15);
+
+    // Устанавливаем отступы контента в форме редактирования
     formGroup = new QGroupBox("Редактирование информации о книге", this);
     formLayout = new QFormLayout(formGroup);
     formLayout->setSpacing(10);
@@ -40,7 +40,7 @@ void DataEditing::setupForm()
 
     // ISBN
     isbnEdit = new QLineEdit(this);
-    isbnEdit->setPlaceholderText("978-5-699-12345-6");
+    isbnEdit->setPlaceholderText("999-9-999-9999-9");
     formLayout->addRow("ISBN:", isbnEdit);
 
     // Год издания
@@ -49,13 +49,12 @@ void DataEditing::setupForm()
     yearSpin->setValue(2024);
     formLayout->addRow("Год издания:", yearSpin);
 
-    // Издательство (выпадающий список)
+    // Издательство
     publisherCombo = new QComboBox(this);
     publisherCombo->setEditable(true);
 
     // Загружаем издательства из БД
-    QSqlQuery query;
-    query.exec("SELECT id, name FROM publishers ORDER BY name");
+    QSqlQuery query = db.selectFromTable("publisher", {"id", "name"}, "name");
     publisherCombo->addItem("Не указано", -1);
     while (query.next()) {
         publisherCombo->addItem(query.value(1).toString(), query.value(0).toInt());
@@ -63,13 +62,21 @@ void DataEditing::setupForm()
     formLayout->addRow("Издательство:", publisherCombo);
 
     // Автор
-    authorEdit = new QLineEdit(this);
-    authorEdit->setPlaceholderText("Введите автора");
+    authorEdit = new QComboBox(this);
+    query = db.selectFromTable("authors", {"id", "name"}, "name");
+    authorEdit->addItem("Не указано", -1);
+    while (query.next()) {
+        authorEdit->addItem(query.value(1).toString(), query.value(0).toInt());
+    }
     formLayout->addRow("Автор:", authorEdit);
 
     // Жанр
-    genreEdit = new QLineEdit(this);
-    genreEdit->setPlaceholderText("Введите жанр");
+    genreEdit = new QComboBox(this);
+    query = db.selectFromTable("categories", {"id", "name"}, "name");
+    genreEdit->addItem("Не указано", -1);
+    while (query.next()) {
+        genreEdit->addItem(query.value(1).toString(), query.value(0).toInt());
+    }
     formLayout->addRow("Жанр:", genreEdit);
 
     // Количество копий
@@ -83,26 +90,127 @@ void DataEditing::setupForm()
 
 void DataEditing::setupButtons()
 {
+    // Создаем поле кнопок
     QHBoxLayout *buttonLayout = new QHBoxLayout();
     buttonLayout->addStretch();
 
+    // Кнопка сохранения
     saveBtn = new QPushButton("Сохранить", this);
     saveBtn->setObjectName("saveBtn");
     saveBtn->setMinimumWidth(120);
 
+    // Кнопка отмены
     cancelBtn = new QPushButton("Отмена", this);
     cancelBtn->setObjectName("cancelBtn");
     cancelBtn->setMinimumWidth(120);
 
+    // Подключаем сигналы кнопкам
     connect(saveBtn, &QPushButton::clicked, this, &DataEditing::onSaveClicked);
     connect(cancelBtn, &QPushButton::clicked, this, &DataEditing::onCancelClicked);
 
+    // Добавляем кнопки в отображение
     buttonLayout->addWidget(saveBtn);
     buttonLayout->addWidget(cancelBtn);
     buttonLayout->addStretch();
 
     mainLayout->addLayout(buttonLayout);
 }
+
+void DataEditing::loadBookData(int bookId, const QMap<QString, QVariant> &bookData)
+{
+    currentBookId = bookId;
+
+    // Распаковываем значения из словаря
+    QString title = bookData["title"].toString();
+    QString isbn = bookData["isbn"].toString();
+    int year = bookData["year"].toInt();
+    int publisher_id = bookData["publisher_id"].toInt();
+    QString author_id = bookData["author_id"].toString();
+    QString genre =bookData["genre_name"].toString();
+    int copies = bookData["copy_count"].toInt();
+
+    // Заполняем поля
+    bookIdLabel->setText(QString::number(bookId));
+    titleEdit->setText(title);
+    isbnEdit->setText(isbn);
+    yearSpin->setValue(year);
+    copiesSpin->setValue(copies);
+
+    // Выбираем издательство в комбобоксе
+    int index = publisherCombo->findData(publisher_id);
+    if (index >= 0) {
+        publisherCombo->setCurrentIndex(index);
+    } else {
+        publisherCombo->setCurrentIndex(0);
+    }
+}
+
+bool DataEditing::validateInputs()
+{
+    // Проверяем, что поле названия книги не пустое
+    if (titleEdit->text().isEmpty()) {
+        MessageBox::showError(this, "Ошибка", "Название книги не может быть пустым!", "Пожалуйста, введите название книги");
+
+        // Устанавливаем фокус на поле ввода
+        titleEdit->setFocus();
+        return false;
+    }
+
+    // Проверяем, что название книги достаточно длинное
+    if (titleEdit->text().length() < 2) {
+        // Показываем предупреждение о коротком названии
+        MessageBox::showError(this, "Ошибка",  "Название книги слишком короткое!", "");
+
+         // Устанавливаем фокус на поле ввода
+        titleEdit->setFocus();
+        return false;
+    }
+
+    return true;
+}
+
+bool DataEditing::saveToDatabase()
+{
+    // Подключение к базе данных и передача словаря
+    QMap<QString, QVariant> updatedBookData;
+
+    updatedBookData["id"] = currentBookId;
+    updatedBookData["title"] = titleEdit->text().trimmed();
+    updatedBookData["isbn"] = isbnEdit->text().trimmed();
+    updatedBookData["year"] = yearSpin->value();
+    updatedBookData["publisher_id"] = publisherCombo->currentData().toInt();
+    updatedBookData["author_id"] = authorEdit->currentData().toInt();
+    updatedBookData["category_id"] = genreEdit->currentData().toInt();
+    updatedBookData["copy_count"] = copiesSpin->value();
+
+    // Получаем статус выполнения метода
+    bool success = db.updateBook(updatedBookData);
+
+    return success;
+}
+
+void DataEditing::onSaveClicked()
+{
+    // Если все поля правильные то отправляем сигналы
+    if (validateInputs()) {
+        if (saveToDatabase()) {
+            emit dataSaved();
+            emit editingFinished();
+        }
+    }
+}
+
+void DataEditing::onCancelClicked()
+{
+    // Показываем окно подтверждения с вопросом об отмене изменений
+    int result = MessageBox::showConfirmation(this, "Подтверждение", "Отменить изменения?", "Все несохраненные данные будут потеряны.");
+
+    // Если пользователь подтвердил отмену
+    if (result == QMessageBox::Yes) {
+        emit editingFinished();
+    }
+}
+
 
 void DataEditing::setupDesign() {
     setStyleSheet(
@@ -144,111 +252,6 @@ void DataEditing::setupDesign() {
         "QPushButton#cancelBtn:hover {"
         "    background-color: #da190b;"
         "}"
-    );
+        );
 }
 
-
-void DataEditing::loadBookData(int bookId, const QMap<QString, QVariant> &bookData)
-{
-    currentBookId = bookId;
-
-    QString title = bookData["title"].toString();
-    QString isbn = bookData["isbn"].toString();
-    int year = bookData["year"].toInt();
-    int publisher_id = bookData["publisher_id"].toInt();
-    QString author = bookData["author_name"].toString();
-    QString genre =bookData["genre_name"].toString();
-    int copies = bookData["copy_count"].toInt();
-
-    // Заполняем поля
-    bookIdLabel->setText(QString::number(bookId));
-    titleEdit->setText(title);
-    isbnEdit->setText(isbn);
-    yearSpin->setValue(year);
-    authorEdit->setText(author);
-    genreEdit->setText(genre);
-    copiesSpin->setValue(copies);
-
-    // Выбираем издательство в комбобоксе
-    int index = publisherCombo->findData(publisher_id);
-    if (index >= 0) {
-        publisherCombo->setCurrentIndex(index);
-    } else {
-        publisherCombo->setCurrentIndex(0);
-    }
-}
-
-bool DataEditing::validateInputs()
-{
-    if (titleEdit->text().isEmpty()) {
-        QMessageBox::warning(this, "Ошибка", "Название книги не может быть пустым!");
-        titleEdit->setFocus();
-        return false;
-    }
-
-    if (titleEdit->text().length() < 2) {
-        QMessageBox::warning(this, "Ошибка", "Название книги слишком короткое!");
-        titleEdit->setFocus();
-        return false;
-    }
-
-    return true;
-}
-
-bool DataEditing::saveToDatabase()
-{
-    QSqlQuery query;
-
-    // Обновляем данные книги
-    query.prepare("UPDATE books SET "
-                  "title = :title, "
-                  "isbn = :isbn, "
-                  "year = :year, "
-                  "publisher_id = :publisher_id "
-                  "WHERE id = :id");
-
-    query.bindValue(":title", titleEdit->text().trimmed());
-    query.bindValue(":isbn", isbnEdit->text().trimmed());
-    query.bindValue(":year", yearSpin->value());
-
-    int publisherId = publisherCombo->currentData().toInt();
-    if (publisherId == -1) {
-        query.bindValue(":publisher_id", QVariant(QVariant::Int));
-    } else {
-        query.bindValue(":publisher_id", publisherId);
-    }
-
-    query.bindValue(":id", currentBookId);
-
-    if (!query.exec()) {
-        qDebug() << "Ошибка обновления книги:" << query.lastError().text();
-        QMessageBox::critical(this, "Ошибка",
-                              "Не удалось сохранить изменения:\n" + query.lastError().text());
-        return false;
-    }
-
-    // Здесь можно добавить обновление автора, жанра и копий, если есть соответствующие таблицы
-    qDebug() << "Книга с ID" << currentBookId << "успешно обновлена";
-
-    return true;
-}
-
-void DataEditing::onSaveClicked()
-{
-    if (validateInputs()) {
-        if (saveToDatabase()) {
-            QMessageBox::information(this, "Успех", "Данные книги успешно сохранены!");
-            emit dataSaved();
-            emit editingFinished();
-        }
-    }
-}
-
-void DataEditing::onCancelClicked()
-{
-    if (QMessageBox::question(this, "Подтверждение",
-                              "Отменить изменения? Все несохраненные данные будут потеряны.",
-                              QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
-        emit editingFinished();
-    }
-}

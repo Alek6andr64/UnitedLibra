@@ -18,7 +18,11 @@ public:
     void disconnect();
 
     bool createTables();
+
+    QSqlQuery selectFromTable(const QString &tableName, const QStringList &fields, const QString &orderByField);
+
     bool addBook(const QString &title, const QString &isbn, int publisher_id, int year);
+    bool updateBook(const QMap<QString, QVariant> &updatedBookData);
     QVector<int> deleteBooks(QVector<int> ids);
     QVector<QMap<QString, QVariant>> getBooks(const QString &text);
 

@@ -1,52 +1,57 @@
 #include "MessageBox.h"
 
-MessageBox::MessageBox(QWidget *parent): QWidget(parent){
-
+MessageBox::MessageBox(QWidget *parent) : QWidget(parent)
+{
 }
 
-int MessageBox::showUpdateInfo(QWidget *parent)
+int MessageBox::showInfoWithDisable(QWidget *parent, const QString &title, const QString &text, const QString &okButtonText, const QString &disableButtonText)
 {
-    // Создаем окно ошибки при удалении с текстом
     QMessageBox msgBox(parent);
+
+    // Устанавливаем иконку, заголовок, основной текст
     msgBox.setIcon(QMessageBox::Information);
-    msgBox.setWindowTitle("Информация");
-    msgBox.setText("Данные были обновлены");
+    msgBox.setWindowTitle(title);
+    msgBox.setText(text);
 
-    QPushButton *doNotShowButton = msgBox.addButton("Больше не показывать", QMessageBox::ActionRole);
-    QPushButton *yesButton = msgBox.addButton("Ок", QMessageBox::YesRole);
+    // Создаем кнопки
+    QPushButton *disableButton = msgBox.addButton(disableButtonText, QMessageBox::ActionRole);
+    QPushButton *okButton = msgBox.addButton(okButtonText, QMessageBox::YesRole);
 
-    // Ставим "Да" как ответ по умолчанию
-    msgBox.setDefaultButton(yesButton);
+    // Ставим да как ответ по умолчанию
+    msgBox.setDefaultButton(okButton);
 
     // Выводим окно
     msgBox.exec();
 
     // Возвращаем результат нажатия кнопки
-    if (msgBox.clickedButton() == yesButton) {
+    if (msgBox.clickedButton() == okButton) {
         return 1;
-    }
-    else if (msgBox.clickedButton() == doNotShowButton) {
+    } else if (msgBox.clickedButton() == disableButton) {
         return 0;
     }
-    // Значение по умолчанию
-    return QMessageBox::Yes;
 
+    return 1;
 }
 
-int MessageBox::showDeleteConfirmation(QWidget *parent)
+int MessageBox::showConfirmation(QWidget *parent, const QString &title, const QString &text, const QString &informativeText, const QString &yesButtonText, const QString &noButtonText)
 {
-    // Создаем окно предупреждения об удалении с текстом
     QMessageBox msgBox(parent);
+
+    // Устанавливаем иконку, заголовок, основной текст
     msgBox.setIcon(QMessageBox::Warning);
-    msgBox.setWindowTitle("Предупреждение");
-    msgBox.setText("Вы действительно хотите удалить выбранные записи?");
-    msgBox.setInformativeText("Это действие нельзя отменить.");
+    msgBox.setWindowTitle(title);
+    msgBox.setText(text);
 
-    // Определяем кнопки
-    QPushButton *noButton = msgBox.addButton("Нет", QMessageBox::NoRole);
-    QPushButton *yesButton = msgBox.addButton("Да", QMessageBox::YesRole);
+    // Если передан дополнительный текст, устанавливаем его
+    if (!informativeText.isEmpty()) {
+        msgBox.setInformativeText(informativeText);
+    }
 
-    // Ставим "Да" как ответ по умолчанию
+    // Создаем кнопки
+    QPushButton *noButton = msgBox.addButton(noButtonText, QMessageBox::NoRole);
+    QPushButton *yesButton = msgBox.addButton(yesButtonText, QMessageBox::YesRole);
+
+    // Ставим да как ответ по умолчанию
     msgBox.setDefaultButton(yesButton);
 
     // Выводим окно
@@ -58,20 +63,34 @@ int MessageBox::showDeleteConfirmation(QWidget *parent)
     else if (msgBox.clickedButton() == noButton)
         return QMessageBox::No;
 
-    // Значение по умолчанию
     return QMessageBox::No;
 }
 
-void MessageBox::showDeleteError(QWidget *parent, int booksDeleted, int booksToDelete)
+void MessageBox::showInfo(QWidget *parent, const QString &title, const QString &text)
 {
-    // Создаем окно ошибки при удалении с текстом
+     // Устанавливаем иконку, заголовок, основной текст
     QMessageBox msgBox(parent);
-    msgBox.setIcon(QMessageBox::Critical);
-    msgBox.setWindowTitle("Ошибка");
-    msgBox.setText("При удалении данных произошла неизвестная ошибка.");
-    msgBox.setInformativeText(QString("%1 книг из %2 удалено").arg(booksDeleted).arg(booksToDelete));
+    msgBox.setIcon(QMessageBox::Information);
+    msgBox.setWindowTitle(title);
 
     // Выводим окно
     msgBox.exec();
+}
 
+void MessageBox::showError(QWidget *parent, const QString &title, const QString &text, const QString &informativeText)
+{
+    QMessageBox msgBox(parent);
+
+    // Устанавливаем иконку, заголовок, основной текст
+    msgBox.setIcon(QMessageBox::Critical);
+    msgBox.setWindowTitle(title);
+    msgBox.setText(text);
+
+    // Если передан дополнительный текст, устанавливаем его
+    if (!informativeText.isEmpty()) {
+        msgBox.setInformativeText(informativeText);
+    }
+
+    // Выводим окно
+    msgBox.exec();
 }
