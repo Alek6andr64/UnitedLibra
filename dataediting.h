@@ -1,6 +1,8 @@
 #ifndef DATAEDITING_H
 #define DATAEDITING_H
 
+#include "messagebox.h"
+#include "database.h"
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -22,25 +24,29 @@ class DataEditing : public QWidget
 public:
     explicit DataEditing(QWidget *parent = nullptr);
 
-
     // Загрузить данные книги для редактирования
     void loadBookData(int bookId, const QMap<QString, QVariant> &bookData);
 
 signals:
-    void dataSaved();  // Сигнал после сохранения
-    void editingFinished(); // Сигнал закрытия вкладки
+    // Сигнал после сохранения и закрытия вкладки
+    void dataSaved();
+    void editingFinished();
 
 private slots:
+    // Сигнал сохранения и отмены действий
     void onSaveClicked();
     void onCancelClicked();
 
 private:
+     // Методы ответственные за создание интерфейса и инициализации логики интерфейса
     void setupUI();
     void setupForm();
     void setupButtons();
     void setupDesign();
     bool validateInputs();
     bool saveToDatabase();
+
+    Database db;
 
     QVBoxLayout *mainLayout;
     QGroupBox *formGroup;
@@ -51,15 +57,16 @@ private:
     QLineEdit *isbnEdit;
     QSpinBox *yearSpin;
     QComboBox *publisherCombo;
-    QLineEdit *authorEdit;
-    QLineEdit *genreEdit;
+    QComboBox *authorEdit;
+    QComboBox *genreEdit;
     QSpinBox *copiesSpin;
     QLineEdit *bookIdLabel;  // Для отображения ID (только чтение)
 
     QPushButton *saveBtn;
     QPushButton *cancelBtn;
 
-    int currentBookId;  // Храним ID редактируемой книги
+    // Храним ID редактируемой книги
+    int currentBookId;
 };
 
 #endif

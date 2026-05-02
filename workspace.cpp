@@ -303,7 +303,7 @@ void Workspace::onOpenClicked()
 void Workspace::onDeleteClicked()
 {
     // Вызываем окно предупреждения и получаем результат ее нажатия
-    int result = MessageBox::showDeleteConfirmation(this);
+    int result = MessageBox::showConfirmation(this, "Предупреждение", "Вы действительно хотите удалить эти данные?", "Это действие нельзя отменить");
     int booksToDelete = selectedBookIds.size();
 
     // Если пользователь согласен то удаляем записи
@@ -313,7 +313,7 @@ void Workspace::onDeleteClicked()
 
         // Вызываем ошибку если что то пошло не так
         if (deletedBooksCount != booksToDelete) {
-            MessageBox::showDeleteError(this, deletedBooksCount, booksToDelete);
+            MessageBox::showError(this, "Ошибка", "При удалении данных произошла ошибка", QString("Удалено %1 из %2 данных").arg(deletedBooksCount).arg(booksToDelete));
         }
 
         // Удаляем из вектора записи
@@ -339,7 +339,7 @@ void Workspace::updateData()
 void Workspace::onUpdateClicked()
 {
     if (doNotShowUpdateInfo) {
-        doNotShowUpdateInfo = MessageBox::showUpdateInfo(this);
+        doNotShowUpdateInfo = MessageBox::showInfoWithDisable(this, "Информация", "Данные были обновлены");
     }
     updateData();
 }

@@ -2,9 +2,8 @@
 #define MESSAGEBOX_H
 
 #include <QWidget>
-#include <QPushButton>
-#include <QLabel>
 #include <QMessageBox>
+#include <QPushButton>
 
 class MessageBox : public QWidget
 {
@@ -13,15 +12,31 @@ class MessageBox : public QWidget
 public:
     explicit MessageBox(QWidget *parent = nullptr);
 
-    // Метод отображения предупреждения об обновлении данных
-    static int showUpdateInfo(QWidget *parent);
+    // Окно с возможностью отключения
+    static int showInfoWithDisable(QWidget *parent,
+        const QString &title = "Информация",
+        const QString &text = "",
+        const QString &okButtonText = "Ок",
+        const QString &disableButtonText = "Больше не показывать");
 
-    // Метод отображения предупреждения об удалении данных
-    static int showDeleteConfirmation(QWidget *parent);
+    // Окно предупреждения
+    static int showConfirmation(QWidget *parent,
+        const QString &title = "Предупреждение",
+        const QString &text = "",
+        const QString &informativeText = "",
+        const QString &yesButtonText = "Да",
+        const QString &noButtonText = "Нет");
 
-    // Метод отображения ошибки при удалении данных
-    static void showDeleteError(QWidget *parent, int booksDeleted, int booksToDelete);
+    // Окно информации
+    static void showInfo(QWidget *parent,
+        const QString &title = "Информация",
+        const QString &text = "");
 
+    // Окно ошибки
+    static void showError(QWidget *parent,
+        const QString &title = "Ошибка",
+        const QString &text = "При выполнении операции произошла ошибка.",
+        const QString &informativeText = "");
 };
 
 #endif
