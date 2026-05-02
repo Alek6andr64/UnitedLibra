@@ -2,6 +2,7 @@
 #define DATAEDITING_H
 
 #include "messagebox.h"
+#include "tageditor.h"
 #include "database.h"
 #include <QWidget>
 #include <QVBoxLayout>
@@ -57,8 +58,8 @@ private:
     QLineEdit *isbnEdit;
     QSpinBox *yearSpin;
     QComboBox *publisherCombo;
-    QComboBox *authorEdit;
-    QComboBox *genreEdit;
+    TagEditor *authorEdit;
+    TagEditor *genreEdit;
     QSpinBox *copiesSpin;
     QLineEdit *bookIdLabel;  // Для отображения ID (только чтение)
 
