@@ -59,7 +59,7 @@ private:
     QSpinBox *yearSpin;
     QComboBox *publisherCombo;
     TagEditor *authorEdit;
-    TagEditor *genreEdit;
+    TagEditor *categoryEdit;
     QSpinBox *copiesSpin;
     QLineEdit *bookIdLabel;  // Для отображения ID (только чтение)
 

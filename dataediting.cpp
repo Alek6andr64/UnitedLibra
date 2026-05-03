@@ -71,9 +71,9 @@ void DataEditing::setupForm()
     // Жанры
     query = db.selectFromTable("categories");
 
-    genreEdit = new TagEditor(this, "Введите жанр и нажмите Enter или Пробел...");
-    genreEdit->setupData(query);
-    formLayout->addRow("Жанр:", genreEdit);
+    categoryEdit = new TagEditor(this, "Введите жанр и нажмите Enter или Пробел...");
+    categoryEdit->setupData(query);
+    formLayout->addRow("Жанр:", categoryEdit);
 
     // Количество копий
     copiesSpin = new QSpinBox(this);
@@ -121,8 +121,8 @@ void DataEditing::loadBookData(int bookId, const QMap<QString, QVariant> &bookDa
     QString isbn = bookData["isbn"].toString();
     int year = bookData["year"].toInt();
     int publisher_id = bookData["publisher_id"].toInt();
-    QString author_id = bookData["author_id"].toString();
-    QString genre =bookData["genre_name"].toString();
+    QString authors = bookData["authors"].toString();
+    QString categories = bookData["categories"].toString();
     int copies = bookData["copy_count"].toInt();
 
     // Заполняем поля
@@ -139,6 +139,10 @@ void DataEditing::loadBookData(int bookId, const QMap<QString, QVariant> &bookDa
     } else {
         publisherCombo->setCurrentIndex(0);
     }
+
+    authorEdit->setupTags(authors);
+    categoryEdit->setupTags(categories);
+
 }
 
 bool DataEditing::validateInputs()
@@ -192,8 +196,8 @@ bool DataEditing::saveToDatabase()
     }
 
     // Обновляем жанры (если есть выбранные)
-    if (!genreEdit->selectedTags.isEmpty()) {
-        if (!db.updateBookCategories(currentBookId, genreEdit->selectedTags)) {
+    if (!categoryEdit->selectedTags.isEmpty()) {
+        if (!db.updateBookCategories(currentBookId, categoryEdit->selectedTags)) {
             MessageBox::showError(this, "Ошибка", "Не удалось обновить жанры книги");
             return false;
         }

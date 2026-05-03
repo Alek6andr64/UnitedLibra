@@ -123,6 +123,16 @@ void TagEditor::setupData(QSqlQuery& data) {
     autocompletionModel->setStringList(allTags.keys());
 }
 
+void TagEditor::setupTags(QString& tags) {
+    if (!tags.isEmpty()) {
+        QStringList tagsList = tags.split(',');
+        for (QString tag : tagsList) {
+            if (allTags.contains(tag)) {
+                addTagOnLine(allTags[tag], tag);
+            }
+        }
+    }
+}
 
 void TagEditor::onCompletion(const QString& text) {
     if (!text.isEmpty() && allTags.contains(text)) {
@@ -145,7 +155,9 @@ void TagEditor::addTagOnLine(int id, const QString& name) {
 
     // Подключаем сигнал удаления тега
     connect(tag, &Tag::removeRequested, this, &TagEditor::removeTag);
-    lineEdit->clear();
+
+    // Принудительно очищаем текст в главном потоке GUI (Иначе визуально текст может оставаться, хотя его там нет)
+    QMetaObject::invokeMethod(lineEdit, "clear", Qt::QueuedConnection);
 }
 
 void TagEditor::removeTag(int id) {

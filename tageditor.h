@@ -42,6 +42,7 @@ class TagEditor : public QWidget
 public:
     explicit TagEditor(QWidget* parent = nullptr, const QString& initialText = "Нажмите Enter или Пробел...");
     void setupData(QSqlQuery& data);
+    void setupTags(QString& tags);
     QVector<int> selectedTags;              // ID выбранных тегов
 
 protected:
