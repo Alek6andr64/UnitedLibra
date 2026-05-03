@@ -24,20 +24,13 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(UnitedLibra
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        workspace.h
-        workspace.cpp
-        sidebar.h
-        sidebar.cpp
-        database.h
-        dataediting.h
-        database.cpp
-        dataline.cpp
-        dataediting.cpp
-        dataline.h
-        messagebox.h
-        messagebox.cpp
-        tabs.cpp
-        tabs.h
+        workspace.h workspace.cpp
+        sidebar.h sidebar.cpp
+        database.h database.cpp
+        dataline.cpp dataline.h
+        messagebox.h messagebox.cpp
+        dataediting.h dataediting.cpp
+        resources.qrc
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET UnitedLibra APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

@@ -3,8 +3,11 @@
 
 #include <QFrame>
 #include <QVBoxLayout>
-#include <QTreeView>
-#include <QStandardItemModel>
+#include <QPushButton>
+#include <QLabel>
+#include <QScrollArea>
+#include <QWidget>
+#include <QHBoxLayout>
 
 class Sidebar : public QFrame
 {
@@ -17,15 +20,22 @@ signals:
     void menuItemClicked(const QString &item);
 
 private slots:
-    void onTreeClicked(const QModelIndex &index);
+    void onButtonClicked();
 
 private:
     void setupUI();
-    void setupTree();
+    void createHeader();
+    void createMenuSection(const QString &title, const QVector<QPair<QString, QPair<QString, QString>>> &items);
+    void createAccountPanel();
+
+    QPushButton* createNavButton(const QString &text, const QString &iconPath, const QString &signalText);
 
     QVBoxLayout *mainLayout;
-    QTreeView *treeView;
-    QStandardItemModel *model;
+    QScrollArea *scrollArea;
+    QWidget *scrollContent;
+    QVBoxLayout *menuLayout;
+
+    QPushButton *currentButton;
 };
 
 #endif

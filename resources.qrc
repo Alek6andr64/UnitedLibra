@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>books.png</file>
+        <file>loans.png</file>
+        <file>fines.png</file>
+        <file>users.png</file>
+        <file>staff.png</file>
+        <file>logs.png</file>
+        <file>appearance.png</file>
+        <file>themes.png</file>
+        <file>account.png</file>
+        <file>help.png</file>
+        <file>avatar.png</file>
+    </qresource>
+</RCC>
