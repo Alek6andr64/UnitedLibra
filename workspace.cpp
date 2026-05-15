@@ -205,24 +205,14 @@ void Workspace::updateAvailableResults()
 
 void Workspace::onAddClicked()
 {
-    // Добавить запись (пока пусто)
-    QMessageBox::information(this, "Информация", "Функция добавления в разработке");
+    // Открываем вкладку для новой книги
+    openEditingTab(-1, QMap<QString, QVariant>(), true);
 }
 
-void Workspace::openEditingTab(int bookId, const QMap<QString, QVariant> &bookData)
+void Workspace::openEditingTab(int bookId, const QMap<QString, QVariant> &bookData, bool newBook)
 {
     // Находим родительский QTabWidget
-    QTabWidget *tabWidget = nullptr;
-    QWidget *parent = this->parentWidget();
-
-    // Поднимаемся по иерархии виджетов, пока не найдем QTabWidget
-    while (parent) {
-        tabWidget = qobject_cast<QTabWidget*>(parent);
-        if (tabWidget) {
-            break;
-        }
-        parent = parent->parentWidget();
-    }
+    QTabWidget *tabWidget = findParentTabWidget();
 
     if (!tabWidget) {
         qDebug() << "Не найден QTabWidget для открытия вкладки";
@@ -230,12 +220,17 @@ void Workspace::openEditingTab(int bookId, const QMap<QString, QVariant> &bookDa
         return;
     }
 
-    // Проверяем, не открыта ли уже вкладка с этой книгой
+    // Определяем название вкладки
+    QString tabKey = newBook ? "✏️ Новая книга" : QString::number(bookId);
+
+    // Проверяем, не открыта ли уже такая вкладка
     for (int i = 0; i < tabWidget->count(); ++i) {
         DataEditing *existingTab = qobject_cast<DataEditing*>(tabWidget->widget(i));
         if (existingTab) {
-            // Проверяем по заголовку вкладки
-            if (tabWidget->tabText(i).contains(QString::number(bookId))) {
+            if (newBook && tabWidget->tabText(i).contains("✏️ Новая книга")) {
+                tabWidget->setCurrentIndex(i);
+                return;
+            } else if (!newBook && tabWidget->tabText(i).contains(tabKey)) {
                 tabWidget->setCurrentIndex(i);
                 return;
             }
@@ -245,8 +240,13 @@ void Workspace::openEditingTab(int bookId, const QMap<QString, QVariant> &bookDa
     // Создаем новую вкладку
     DataEditing *editTab = new DataEditing(tabWidget);
 
-    // Загружаем данные книги
-    editTab->loadBookData(bookId, bookData);
+    // Загружаем данные
+    if (newBook) {
+        qDebug() << "Открыта вкладка создания для книги";
+    } else {
+        editTab->loadBookData(bookId, bookData);
+        qDebug() << "Открыта вкладка редактирования для книги ID:" << bookId;
+    }
 
     // Подключаем сигнал сохранения для обновления основной таблицы
     connect(editTab, &DataEditing::dataSaved, this, &Workspace::onUpdateClicked);
@@ -260,13 +260,17 @@ void Workspace::openEditingTab(int bookId, const QMap<QString, QVariant> &bookDa
         }
     });
 
-    // Добавляем вкладку
-    QString tabTitle = QString("✏️ %1").arg(bookData["title"].toString().left(25));
+    // Записываем заголовок вкладки
+    QString tabTitle;
+    if (newBook) {
+        tabTitle = "✏️ Новая книга";
+    } else {
+        tabTitle = QString("✏️ %1").arg(bookData["title"].toString().left(25));
+    }
 
+    // Добавляем вкладку
     int index = tabWidget->addTab(editTab, tabTitle);
     tabWidget->setCurrentIndex(index);
-
-    qDebug() << "Открыта вкладка редактирования для книги ID:" << bookId;
 }
 
 void Workspace::onOpenClicked()
@@ -277,8 +281,7 @@ void Workspace::onOpenClicked()
         return;
     }
 
-    for (int bookId: selectedBookIds) {
-
+    for (int bookId : selectedBookIds) {
         // Находим данные книги в текущем списке
         QMap<QString, QVariant> bookData;
         bool found = false;
@@ -292,13 +295,28 @@ void Workspace::onOpenClicked()
         }
 
         if (found) {
-            openEditingTab(bookId, bookData);
+            openEditingTab(bookId, bookData, false);
         } else {
             QMessageBox::warning(this, "Ошибка", "Не удалось найти данные выбранной книги.");
         }
     }
 }
 
+QTabWidget* Workspace::findParentTabWidget() const
+{
+    // Ищем родительскую вкладку
+    QWidget *parent = this->parentWidget();
+
+    while (parent) {
+        QTabWidget *tabWidget = qobject_cast<QTabWidget*>(parent);
+        if (tabWidget) {
+            return tabWidget;
+        }
+        parent = parent->parentWidget();
+    }
+
+    return nullptr;
+}
 
 void Workspace::onDeleteClicked()
 {

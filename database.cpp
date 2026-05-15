@@ -89,24 +89,30 @@ QSqlQuery Database::selectFromTable(const QString &tableName, const QStringList 
 }
 
 
-bool Database::addBook(const QString &title, const QString &isbn,  int publisher_id, int year)
+int Database::addBook(const QMap<QString, QVariant> &bookData)
 {
+    QString title = bookData["title"].toString();
+    QString isbn = bookData["isbn"].toString();
+    int publisher_id = bookData["publisher_id"].toInt();
+    int year = bookData["year"].toInt();
+
     // Создаем запрос на добавление книги
     QSqlQuery query;
-    query.prepare("INSERT INTO books (title, isbn, year, publisher_id) VALUES (:title, :isbn, :publisher_id, :year)");
+    query.prepare("INSERT INTO books (title, isbn, year, publisher_id) VALUES (:title, :isbn, :year, :publisher_id)");
     query.bindValue(":title", title);
     query.bindValue(":isbn", isbn);
-    query.bindValue(":publisher_id", publisher_id);
     query.bindValue(":year", year);
+    query.bindValue(":publisher_id", publisher_id);
 
     // Вывод сообщения об успешности добавления книги
     if (!query.exec()) {
         qDebug() << "Ошибка добавления:" << query.lastError().text();
-        return false;
+        return -1;
     }
 
+    // Возвращаем id добавленной книги
     qDebug() << "Книга добавлена. ID:" << query.lastInsertId().toInt();
-    return true;
+    return query.lastInsertId().toInt();
 }
 
 bool Database::updateBook(const QMap<QString, QVariant> &updatedBookData)

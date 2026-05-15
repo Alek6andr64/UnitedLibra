@@ -21,7 +21,7 @@ public:
 
     QSqlQuery selectFromTable(const QString &tableName, const QStringList &fields = {"id", "name"}, const QString &orderByField = "name");
 
-    bool addBook(const QString &title, const QString &isbn, int publisher_id, int year);
+    int addBook(const QMap<QString, QVariant> &bookData);
     bool updateBook(const QMap<QString, QVariant> &updatedBookData);
     bool updateBookAuthors(int bookId, const QVector<int> &authorIds);
     bool updateBookCategories(int bookId, const QVector<int> &categoryIds);
