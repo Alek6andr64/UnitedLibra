@@ -65,7 +65,7 @@ bool Database::createTables()
     return true;
 }
 
-QSqlQuery Database::selectFromTable(const QString &tableName, const QStringList &fields, const QString &orderByField = QString())
+QSqlQuery Database::selectFromTable(const QString &tableName, const QStringList &fields, const QString &orderByField)
 {
     QSqlQuery query;
 
@@ -109,9 +109,6 @@ bool Database::addBook(const QString &title, const QString &isbn,  int publisher
     return true;
 }
 
-
-
-
 bool Database::updateBook(const QMap<QString, QVariant> &updatedBookData)
 {
     int id = updatedBookData["id"].toInt();
@@ -119,64 +116,87 @@ bool Database::updateBook(const QMap<QString, QVariant> &updatedBookData)
     QString isbn = updatedBookData["isbn"].toString();
     int year = updatedBookData["year"].toInt();
     int publisher_id = updatedBookData["publisher_id"].toInt();
-    int author_id = updatedBookData["author_id"].toInt();
-    int category_id =updatedBookData["category_id"].toInt();
     int copies = updatedBookData["copy_count"].toInt();
 
     QSqlQuery query;
 
-    // Обновляем данные книги
-    query.prepare("UPDATE books SET title = :title, isbn = :isbn, year = :year, publisher_id = :publisher_id WHERE id = :id");
+    // Обновляем только основные данные книги
+    query.prepare("UPDATE books SET title = :title, isbn = :isbn, year = :year, "
+                  "publisher_id = :publisher_id WHERE id = :id");
 
     query.bindValue(":title", title);
     query.bindValue(":isbn", isbn);
     query.bindValue(":year", year);
     query.bindValue(":publisher_id", publisher_id);
+    query.bindValue(":copies", copies);
     query.bindValue(":id", id);
-
 
     if (!query.exec()) {
         qDebug() << "Ошибка обновления книги:" << query.lastError().text();
         return false;
     }
 
-    query.prepare("DELETE FROM book_authors WHERE book_id = :id");
-    query.bindValue(":id", id);
+    qDebug() << "Основная информация о книге с ID" << id << "успешно обновлена";
+    return true;
+}
+
+bool Database::updateBookAuthors(int bookId, const QVector<int> &authorIds)
+{
+    QSqlQuery query;
+
+    // Удаляем старые связи с авторами
+    query.prepare("DELETE FROM book_authors WHERE book_id = :book_id");
+    query.bindValue(":book_id", bookId);
+
     if (!query.exec()) {
         qDebug() << "Ошибка удаления старых авторов:" << query.lastError().text();
         return false;
     }
 
-    // Обновляем данные автора
-    query.prepare("UPDATE book_authors SET author_id = :author_id WHERE book_id = :id");
-    query.bindValue(":author_id", author_id);
-    query.bindValue(":id", id);
+    // Добавляем новые связи с авторами
+    for (int authorId : authorIds) {
+        query.prepare("INSERT INTO book_authors (book_id, author_id) VALUES (:book_id, :author_id)");
+        query.bindValue(":book_id", bookId);
+        query.bindValue(":author_id", authorId);
 
-
-    if (!query.exec()) {
-        qDebug() << "Ошибка обновления автора:" << query.lastError().text();
-        return false;
+        if (!query.exec()) {
+            qDebug() << "Ошибка добавления автора с ID" << authorId << ":" << query.lastError().text();
+            return false;
+        }
     }
 
-    query.prepare("DELETE FROM book_categories WHERE book_id = :id");
-    query.bindValue(":id", id);
-    query.exec();
-
-    // Обновляем данные жанра
-    query.prepare("UPDATE book_categories SET category_id = :category_id WHERE book_id = :id");
-    query.bindValue(":category_id", category_id);
-    query.bindValue(":id", id);
-
-    if (!query.exec()) {
-        qDebug() << "Ошибка обновления жанра:" << query.lastError().text();
-        return false;
-    }
-
-    qDebug() << "Книга с ID" << id << "успешно обновлена";
-
+    qDebug() << "Авторы для книги с ID" << bookId << "успешно обновлены. Добавлено авторов:" << authorIds.size();
     return true;
 }
 
+bool Database::updateBookCategories(int bookId, const QVector<int> &categoryIds)
+{
+    QSqlQuery query;
+
+    // Удаляем старые связи с жанрами
+    query.prepare("DELETE FROM book_categories WHERE book_id = :book_id");
+    query.bindValue(":book_id", bookId);
+
+    if (!query.exec()) {
+        qDebug() << "Ошибка удаления старых жанров:" << query.lastError().text();
+        return false;
+    }
+
+    // Добавляем новые связи с жанрами
+    for (int categoryId : categoryIds) {
+        query.prepare("INSERT INTO book_categories (book_id, category_id) VALUES (:book_id, :category_id)");
+        query.bindValue(":book_id", bookId);
+        query.bindValue(":category_id", categoryId);
+
+        if (!query.exec()) {
+            qDebug() << "Ошибка добавления жанра с ID" << categoryId << ":" << query.lastError().text();
+            return false;
+        }
+    }
+
+    qDebug() << "Жанры для книги с ID" << bookId << "успешно обновлены. Добавлено жанров:" << categoryIds.size();
+    return true;
+}
 
 QVector<int> Database::deleteBooks(QVector<int> ids)
 {

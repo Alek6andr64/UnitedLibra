@@ -273,7 +273,7 @@ void Workspace::onOpenClicked()
 {
     // Проверяем, выбрана ли хотя бы одна книга
     if (selectedBookIds.isEmpty()) {
-        QMessageBox::information(this, "Информация", "Пожалуйста, выберите книгу для просмотра/редактирования.");
+        MessageBox::showInfo(this, "Информация", "Пожалуйста, выберите книгу для просмотра/редактирования.");
         return;
     }
 

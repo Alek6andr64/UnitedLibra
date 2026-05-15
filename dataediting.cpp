@@ -54,7 +54,7 @@ void DataEditing::setupForm()
     publisherCombo->setEditable(true);
 
     // Загружаем издательства из БД
-    QSqlQuery query = db.selectFromTable("publisher", {"id", "name"}, "name");
+    QSqlQuery query = db.selectFromTable("publisher");
     publisherCombo->addItem("Не указано", -1);
     while (query.next()) {
         publisherCombo->addItem(query.value(1).toString(), query.value(0).toInt());
@@ -62,22 +62,18 @@ void DataEditing::setupForm()
     formLayout->addRow("Издательство:", publisherCombo);
 
     // Автор
-    authorEdit = new QComboBox(this);
-    query = db.selectFromTable("authors", {"id", "name"}, "name");
-    authorEdit->addItem("Не указано", -1);
-    while (query.next()) {
-        authorEdit->addItem(query.value(1).toString(), query.value(0).toInt());
-    }
+    query = db.selectFromTable("authors");
+
+    authorEdit = new TagEditor(this, "Введите автора и нажмите Enter или Пробел...");
+    authorEdit->setupData(query);
     formLayout->addRow("Автор:", authorEdit);
 
-    // Жанр
-    genreEdit = new QComboBox(this);
-    query = db.selectFromTable("categories", {"id", "name"}, "name");
-    genreEdit->addItem("Не указано", -1);
-    while (query.next()) {
-        genreEdit->addItem(query.value(1).toString(), query.value(0).toInt());
-    }
-    formLayout->addRow("Жанр:", genreEdit);
+    // Жанры
+    query = db.selectFromTable("categories");
+
+    categoryEdit = new TagEditor(this, "Введите жанр и нажмите Enter или Пробел...");
+    categoryEdit->setupData(query);
+    formLayout->addRow("Жанр:", categoryEdit);
 
     // Количество копий
     copiesSpin = new QSpinBox(this);
@@ -125,8 +121,8 @@ void DataEditing::loadBookData(int bookId, const QMap<QString, QVariant> &bookDa
     QString isbn = bookData["isbn"].toString();
     int year = bookData["year"].toInt();
     int publisher_id = bookData["publisher_id"].toInt();
-    QString author_id = bookData["author_id"].toString();
-    QString genre =bookData["genre_name"].toString();
+    QString authors = bookData["authors"].toString();
+    QString categories = bookData["categories"].toString();
     int copies = bookData["copy_count"].toInt();
 
     // Заполняем поля
@@ -143,6 +139,10 @@ void DataEditing::loadBookData(int bookId, const QMap<QString, QVariant> &bookDa
     } else {
         publisherCombo->setCurrentIndex(0);
     }
+
+    authorEdit->setupTags(authors);
+    categoryEdit->setupTags(categories);
+
 }
 
 bool DataEditing::validateInputs()
@@ -171,7 +171,7 @@ bool DataEditing::validateInputs()
 
 bool DataEditing::saveToDatabase()
 {
-    // Подключение к базе данных и передача словаря
+    // Получаем основные данные книги
     QMap<QString, QVariant> updatedBookData;
 
     updatedBookData["id"] = currentBookId;
@@ -179,14 +179,31 @@ bool DataEditing::saveToDatabase()
     updatedBookData["isbn"] = isbnEdit->text().trimmed();
     updatedBookData["year"] = yearSpin->value();
     updatedBookData["publisher_id"] = publisherCombo->currentData().toInt();
-    updatedBookData["author_id"] = authorEdit->currentData().toInt();
-    updatedBookData["category_id"] = genreEdit->currentData().toInt();
     updatedBookData["copy_count"] = copiesSpin->value();
 
-    // Получаем статус выполнения метода
-    bool success = db.updateBook(updatedBookData);
+    // Обновляем основную информацию о книге
+    if (!db.updateBook(updatedBookData)) {
+        MessageBox::showError(this, "Ошибка", "Не удалось обновить данные книги");
+        return false;
+    }
 
-    return success;
+    // Обновляем авторов
+    if (!authorEdit->selectedTags.isEmpty()) {
+        if (!db.updateBookAuthors(currentBookId, authorEdit->selectedTags)) {
+            MessageBox::showError(this, "Ошибка", "Не удалось обновить авторов книги");
+            return false;
+        }
+    }
+
+    // Обновляем жанры (если есть выбранные)
+    if (!categoryEdit->selectedTags.isEmpty()) {
+        if (!db.updateBookCategories(currentBookId, categoryEdit->selectedTags)) {
+            MessageBox::showError(this, "Ошибка", "Не удалось обновить жанры книги");
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void DataEditing::onSaveClicked()
