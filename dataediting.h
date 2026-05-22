@@ -26,7 +26,7 @@ public:
     explicit DataEditing(QWidget *parent = nullptr);
 
     // Загрузить данные книги для редактирования
-    void loadBookData(int bookId, const QMap<QString, QVariant> &bookData);
+    void loadData(int dataId, const QMap<QString, QVariant> &dataData);
 
 signals:
     // Сигнал после сохранения и закрытия вкладки
@@ -39,7 +39,7 @@ private slots:
     void onCancelClicked();
 
 private:
-     // Методы ответственные за создание интерфейса и инициализации логики интерфейса
+    // Методы ответственные за создание интерфейса и инициализации логики интерфейса
     void setupUI();
     void setupForm();
     void setupButtons();
@@ -61,13 +61,13 @@ private:
     TagEditor *authorEdit;
     TagEditor *categoryEdit;
     QSpinBox *copiesSpin;
-    QLineEdit *bookIdLabel;  // Для отображения ID (только чтение)
+    QLineEdit *dataIdLabel;  // Для отображения ID (только чтение)
 
     QPushButton *saveBtn;
     QPushButton *cancelBtn;
 
     // Храним ID редактируемой книги
-    int currentBookId = -1;
+    int currentDataId = -1;
 };
 
 #endif

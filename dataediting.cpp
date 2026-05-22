@@ -28,10 +28,10 @@ void DataEditing::setupForm()
     formLayout->setContentsMargins(15, 20, 15, 15);
 
     // ID книги (только для чтения)
-    bookIdLabel = new QLineEdit(this);
-    bookIdLabel->setReadOnly(true);
-    bookIdLabel->setStyleSheet("background-color: #f0f0f0;");
-    formLayout->addRow("ID книги:", bookIdLabel);
+    dataIdLabel = new QLineEdit(this);
+    dataIdLabel->setReadOnly(true);
+    dataIdLabel->setStyleSheet("background-color: #f0f0f0;");
+    formLayout->addRow("ID книги:", dataIdLabel);
 
     // Название книги
     titleEdit = new QLineEdit(this);
@@ -112,21 +112,21 @@ void DataEditing::setupButtons()
     mainLayout->addLayout(buttonLayout);
 }
 
-void DataEditing::loadBookData(int bookId, const QMap<QString, QVariant> &bookData)
+void DataEditing::loadData(int dataId, const QMap<QString, QVariant> &dataData)
 {
-    currentBookId = bookId;
+    currentDataId = dataId;
 
     // Распаковываем значения из словаря
-    QString title = bookData["title"].toString();
-    QString isbn = bookData["isbn"].toString();
-    int year = bookData["year"].toInt();
-    int publisher_id = bookData["publisher_id"].toInt();
-    QString authors = bookData["authors"].toString();
-    QString categories = bookData["categories"].toString();
-    int copies = bookData["copy_count"].toInt();
+    QString title = dataData["title"].toString();
+    QString isbn = dataData["isbn"].toString();
+    int year = dataData["year"].toInt();
+    int publisher_id = dataData["publisher_id"].toInt();
+    QString authors = dataData["authors"].toString();
+    QString categories = dataData["categories"].toString();
+    int copies = dataData["copy_count"].toInt();
 
     // Заполняем поля
-    bookIdLabel->setText(QString::number(bookId));
+    dataIdLabel->setText(QString::number(dataId));
     titleEdit->setText(title);
     isbnEdit->setText(isbn);
     yearSpin->setValue(year);
@@ -161,7 +161,7 @@ bool DataEditing::validateInputs()
         // Показываем предупреждение о коротком названии
         MessageBox::showError(this, "Ошибка",  "Название книги слишком короткое!", "");
 
-         // Устанавливаем фокус на поле ввода
+        // Устанавливаем фокус на поле ввода
         titleEdit->setFocus();
         return false;
     }
@@ -172,36 +172,36 @@ bool DataEditing::validateInputs()
 bool DataEditing::saveToDatabase()
 {
     // Получаем основные данные книги
-    QMap<QString, QVariant> bookData;
-    bookData["id"] = currentBookId;
-    bookData["title"] = titleEdit->text().trimmed();
-    bookData["isbn"] = isbnEdit->text().trimmed();
-    bookData["year"] = yearSpin->value();
-    bookData["publisher_id"] = publisherCombo->currentData().toInt();
-    bookData["copy_count"] = copiesSpin->value();
+    QMap<QString, QVariant> dataData;
+    dataData["id"] = currentDataId;
+    dataData["title"] = titleEdit->text().trimmed();
+    dataData["isbn"] = isbnEdit->text().trimmed();
+    dataData["year"] = yearSpin->value();
+    dataData["publisher_id"] = publisherCombo->currentData().toInt();
+    dataData["copy_count"] = copiesSpin->value();
 
     // Выясняем добавляется или обновляется книга
-    bool isNewBook = (currentBookId == -1);
+    bool isNewData = (currentDataId == -1);
     bool success;
 
     // Сохраняем основную информацию о книге
-    if (isNewBook) {
-        currentBookId = db.addBook(bookData);
-        success = (currentBookId != -1);
+    if (isNewData) {
+        currentDataId = db.addData(dataData);
+        success = (currentDataId != -1);
     } else {
-        success = db.updateBook(bookData);
+        success = db.updateData(dataData);
     }
 
     if (!success) {
-        QString errorMsg = isNewBook ? "Не удалось добавить данные книги" : "Не удалось обновить данные книги";
+        QString errorMsg = isNewData ? "Не удалось добавить данные книги" : "Не удалось обновить данные книги";
         MessageBox::showError(this, "Ошибка", errorMsg);
         return false;
     }
 
     // Сохраняем авторов
     if (!authorEdit->selectedTags.isEmpty()) {
-        if (!db.updateBookAuthors(currentBookId, authorEdit->selectedTags)) {
-            QString errorMsg = isNewBook ? "Не удалось добавить авторов книги" : "Не удалось обновить авторов книги";
+        if (!db.updateDataAuthors(currentDataId, authorEdit->selectedTags)) {
+            QString errorMsg = isNewData ? "Не удалось добавить авторов книги" : "Не удалось обновить авторов книги";
             MessageBox::showError(this, "Ошибка", errorMsg);
             return false;
         }
@@ -209,8 +209,8 @@ bool DataEditing::saveToDatabase()
 
     // Сохраняем жанры
     if (!categoryEdit->selectedTags.isEmpty()) {
-        if (!db.updateBookCategories(currentBookId, categoryEdit->selectedTags)) {
-            QString errorMsg = isNewBook ? "Не удалось добавить жанры книги" : "Не удалось обновить жанры книги";
+        if (!db.updateDataCategories(currentDataId, categoryEdit->selectedTags)) {
+            QString errorMsg = isNewData ? "Не удалось добавить жанры книги" : "Не удалось обновить жанры книги";
             MessageBox::showError(this, "Ошибка", errorMsg);
             return false;
         }

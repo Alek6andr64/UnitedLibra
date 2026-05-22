@@ -21,14 +21,13 @@ public:
 
     QSqlQuery selectFromTable(const QString &tableName, const QStringList &fields = {"id", "name"}, const QString &orderByField = "name");
 
-    int addBook(const QMap<QString, QVariant> &bookData);
-    bool updateBook(const QMap<QString, QVariant> &updatedBookData);
-    bool updateBookAuthors(int bookId, const QVector<int> &authorIds);
-    bool updateBookCategories(int bookId, const QVector<int> &categoryIds);
+    int addData(const QMap<QString, QVariant> &dataMap);
+    bool updateData(const QMap<QString, QVariant> &updatedDataMap);
+    bool updateDataAuthors(int dataId, const QVector<int> &authorIds);
+    bool updateDataCategories(int dataId, const QVector<int> &categoryIds);
 
-    QVector<int> deleteBooks(QVector<int> ids);
-    QVector<QMap<QString, QVariant>> getBooks(const QString &text);
-
+    QVector<int> deleteData(QVector<int> ids);
+    QVector<QMap<QString, QVariant>> getData(const QString &text);
 
 private:
     QSqlDatabase db;

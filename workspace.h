@@ -19,7 +19,23 @@ class Workspace : public QWidget
     Q_OBJECT
 
 public:
-    explicit Workspace(QWidget *parent = nullptr);
+    // Enum для типов данных
+    enum DataType {
+        Books = 1,      // Книги
+        Authors = 2,    // Авторы
+        Publishers = 3, // Издатели
+        BookCopies = 4, // Копии книг
+        Loans = 5,      // Выдачи
+        Fines = 6,      // Штрафы
+        Users = 7       // Пользователи
+    };
+    Q_ENUM(DataType)
+
+    explicit Workspace(QWidget *parent = nullptr, DataType dataType = Books);
+
+    // Геттер для типа данных
+    DataType getDataType() const { return pageDataType; }
+    QString getDataTypeName() const;
 
 signals:
     // Сигналы об изменении данных и обновлении кнопок страниц
@@ -38,11 +54,11 @@ private:
     void generateDataLines(int dataCount, int currentPage);
     // Заполнение линии данных
     void updateAvailableResults();
-    void fillDataLines(int dataCount, int currentPage, QVector<QMap<QString, QVariant>> books);
+    void fillDataLines(int dataCount, int currentPage, QVector<QMap<QString, QVariant>> allData);
     // Обновление линий данных
     void updateData();
     // Открытие вкладки редактирования
-    void openEditingTab(int bookId, const QMap<QString, QVariant> &bookData, bool newBook);
+    void openEditingTab(int dataId, const QMap<QString, QVariant> &dataMap, bool isNewData);
 
     // Метод для поиска QTabWidget
     QTabWidget* findParentTabWidget() const;
@@ -50,10 +66,11 @@ private:
     QVBoxLayout *mainLayout; // Основное рабочее пространство
     QVBoxLayout *dataArea;  // Для хранения строк данных
     Database db;
-    QVector<QMap<QString, QVariant>> books; // Загруженные из базы данных книги
+    QVector<QMap<QString, QVariant>> allData; // Загруженные из базы данных данные
     QLabel *pageInfo = nullptr;
 
     QString filterText = "";
+    DataType pageDataType; // Тип данных
 
     int currentPage = 1; // Текущая страница
     int maxPages = 1; // Максимум страниц
@@ -65,7 +82,7 @@ private:
 
     QVector<QPushButton*> pagesButtons; // Вектор кнопок перемещения по страницам
     QVector<DataLine*> allDataLines;
-    QVector<int> selectedBookIds; // Вектор для хранения ID выбранных книг
+    QVector<int> selectedDataIds; // Вектор для хранения ID выбранных данных
 
 private slots:
     // Слоты обрабатывающие взаимодействия с основными кнопками
@@ -88,8 +105,8 @@ private slots:
     // Слот для обновления кнопок страниц
     void onUpdatePagesButtons();
 
-    // Слот для добавления id книги в список выбранных
-    void onDataLineToggled(bool checked, int bookId);
+    // Слот для добавления id данных в список выбранных
+    void onDataLineToggled(bool checked, int dataId);
 };
 
 #endif

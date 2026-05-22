@@ -53,7 +53,6 @@ bool Database::createTables()
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     )";
-// надо сделать foreign key для publisher_id
 
     // Вывод сообщения об успешности создания таблицы
     if (!query.exec(createQuery)) {
@@ -89,14 +88,14 @@ QSqlQuery Database::selectFromTable(const QString &tableName, const QStringList 
 }
 
 
-int Database::addBook(const QMap<QString, QVariant> &bookData)
+int Database::addData(const QMap<QString, QVariant> &dataMap)
 {
-    QString title = bookData["title"].toString();
-    QString isbn = bookData["isbn"].toString();
-    int publisher_id = bookData["publisher_id"].toInt();
-    int year = bookData["year"].toInt();
+    QString title = dataMap["title"].toString();
+    QString isbn = dataMap["isbn"].toString();
+    int publisher_id = dataMap["publisher_id"].toInt();
+    int year = dataMap["year"].toInt();
 
-    // Создаем запрос на добавление книги
+    // Создаем запрос на добавление данных
     QSqlQuery query;
     query.prepare("INSERT INTO books (title, isbn, year, publisher_id) VALUES (:title, :isbn, :year, :publisher_id)");
     query.bindValue(":title", title);
@@ -104,29 +103,29 @@ int Database::addBook(const QMap<QString, QVariant> &bookData)
     query.bindValue(":year", year);
     query.bindValue(":publisher_id", publisher_id);
 
-    // Вывод сообщения об успешности добавления книги
+    // Вывод сообщения об успешности добавления данных
     if (!query.exec()) {
         qDebug() << "Ошибка добавления:" << query.lastError().text();
         return -1;
     }
 
-    // Возвращаем id добавленной книги
-    qDebug() << "Книга добавлена. ID:" << query.lastInsertId().toInt();
+    // Возвращаем id добавленных данных
+    qDebug() << "Данные добавлены. ID:" << query.lastInsertId().toInt();
     return query.lastInsertId().toInt();
 }
 
-bool Database::updateBook(const QMap<QString, QVariant> &updatedBookData)
+bool Database::updateData(const QMap<QString, QVariant> &updatedDataMap)
 {
-    int id = updatedBookData["id"].toInt();
-    QString title = updatedBookData["title"].toString();
-    QString isbn = updatedBookData["isbn"].toString();
-    int year = updatedBookData["year"].toInt();
-    int publisher_id = updatedBookData["publisher_id"].toInt();
-    int copies = updatedBookData["copy_count"].toInt();
+    int id = updatedDataMap["id"].toInt();
+    QString title = updatedDataMap["title"].toString();
+    QString isbn = updatedDataMap["isbn"].toString();
+    int year = updatedDataMap["year"].toInt();
+    int publisher_id = updatedDataMap["publisher_id"].toInt();
+    int copies = updatedDataMap["copy_count"].toInt();
 
     QSqlQuery query;
 
-    // Обновляем только основные данные книги
+    // Обновляем только основные данные
     query.prepare("UPDATE books SET title = :title, isbn = :isbn, year = :year, "
                   "publisher_id = :publisher_id WHERE id = :id");
 
@@ -138,21 +137,21 @@ bool Database::updateBook(const QMap<QString, QVariant> &updatedBookData)
     query.bindValue(":id", id);
 
     if (!query.exec()) {
-        qDebug() << "Ошибка обновления книги:" << query.lastError().text();
+        qDebug() << "Ошибка обновления данных:" << query.lastError().text();
         return false;
     }
 
-    qDebug() << "Основная информация о книге с ID" << id << "успешно обновлена";
+    qDebug() << "Основная информация о данных с ID" << id << "успешно обновлена";
     return true;
 }
 
-bool Database::updateBookAuthors(int bookId, const QVector<int> &authorIds)
+bool Database::updateDataAuthors(int dataId, const QVector<int> &authorIds)
 {
     QSqlQuery query;
 
     // Удаляем старые связи с авторами
     query.prepare("DELETE FROM book_authors WHERE book_id = :book_id");
-    query.bindValue(":book_id", bookId);
+    query.bindValue(":book_id", dataId);
 
     if (!query.exec()) {
         qDebug() << "Ошибка удаления старых авторов:" << query.lastError().text();
@@ -162,7 +161,7 @@ bool Database::updateBookAuthors(int bookId, const QVector<int> &authorIds)
     // Добавляем новые связи с авторами
     for (int authorId : authorIds) {
         query.prepare("INSERT INTO book_authors (book_id, author_id) VALUES (:book_id, :author_id)");
-        query.bindValue(":book_id", bookId);
+        query.bindValue(":book_id", dataId);
         query.bindValue(":author_id", authorId);
 
         if (!query.exec()) {
@@ -171,17 +170,17 @@ bool Database::updateBookAuthors(int bookId, const QVector<int> &authorIds)
         }
     }
 
-    qDebug() << "Авторы для книги с ID" << bookId << "успешно обновлены. Добавлено авторов:" << authorIds.size();
+    qDebug() << "Авторы для данных с ID" << dataId << "успешно обновлены. Добавлено авторов:" << authorIds.size();
     return true;
 }
 
-bool Database::updateBookCategories(int bookId, const QVector<int> &categoryIds)
+bool Database::updateDataCategories(int dataId, const QVector<int> &categoryIds)
 {
     QSqlQuery query;
 
     // Удаляем старые связи с жанрами
     query.prepare("DELETE FROM book_categories WHERE book_id = :book_id");
-    query.bindValue(":book_id", bookId);
+    query.bindValue(":book_id", dataId);
 
     if (!query.exec()) {
         qDebug() << "Ошибка удаления старых жанров:" << query.lastError().text();
@@ -191,7 +190,7 @@ bool Database::updateBookCategories(int bookId, const QVector<int> &categoryIds)
     // Добавляем новые связи с жанрами
     for (int categoryId : categoryIds) {
         query.prepare("INSERT INTO book_categories (book_id, category_id) VALUES (:book_id, :category_id)");
-        query.bindValue(":book_id", bookId);
+        query.bindValue(":book_id", dataId);
         query.bindValue(":category_id", categoryId);
 
         if (!query.exec()) {
@@ -200,44 +199,44 @@ bool Database::updateBookCategories(int bookId, const QVector<int> &categoryIds)
         }
     }
 
-    qDebug() << "Жанры для книги с ID" << bookId << "успешно обновлены. Добавлено жанров:" << categoryIds.size();
+    qDebug() << "Жанры для данных с ID" << dataId << "успешно обновлены. Добавлено жанров:" << categoryIds.size();
     return true;
 }
 
-QVector<int> Database::deleteBooks(QVector<int> ids)
+QVector<int> Database::deleteData(QVector<int> ids)
 {
-    // Вектор для хранения id удаленных книг
-    QVector<int> deletedBooksIDs;
+    // Вектор для хранения id удаленных данных
+    QVector<int> deletedDataIDs;
 
     QSqlQuery query;
     for (int id : ids) {
-        // Делаем запрос на удаление книги по id
+        // Делаем запрос на удаление данных по id
         query.prepare("DELETE FROM books WHERE id = :id");
         query.bindValue(":id", id);
 
         if (query.exec()) {
             // Проверяем была ли удалена хотя бы одна запись
             if (query.numRowsAffected() > 0) {
-                deletedBooksIDs.append(id);
-                qDebug() << "Книга с ID" << id << "успешно удалена";
+                deletedDataIDs.append(id);
+                qDebug() << "Данные с ID" << id << "успешно удалены";
             } else {
-                qDebug() << "Книга с ID" << id << "не найдена в базе данных";
+                qDebug() << "Данные с ID" << id << "не найдены в базе данных";
             }
         } else {
-            qDebug() << "Ошибка удаления книги с ID" << id << ":" << query.lastError().text();
+            qDebug() << "Ошибка удаления данных с ID" << id << ":" << query.lastError().text();
         }
     }
 
-    qDebug() << "Всего удалено книг:" << deletedBooksIDs.size();
-    return deletedBooksIDs;
+    qDebug() << "Всего удалено данных:" << deletedDataIDs.size();
+    return deletedDataIDs;
 }
 
-QVector<QMap<QString, QVariant>> Database::getBooks(const QString &text)
+QVector<QMap<QString, QVariant>> Database::getData(const QString &text)
 {
-    // Вектор для хранения полученных книг
-    QVector<QMap<QString, QVariant>> books;
+    // Вектор для хранения полученных данных
+    QVector<QMap<QString, QVariant>> allData;
 
-    // Готовим запрос на получение книг без фильтра и с ним
+    // Готовим запрос на получение данных без фильтра и с ним
     QSqlQuery query;
 
     if (text.isEmpty()) {
@@ -299,28 +298,26 @@ QVector<QMap<QString, QVariant>> Database::getBooks(const QString &text)
 
     if (!query.exec()) {
         qDebug() << "Ошибка выполнения запроса:" << query.lastError().text();
-        return books;
+        return allData;
     }
 
     // Заполняем ключ - значение для последующей вставки в вектор
     while (query.next()) {
-        QMap<QString, QVariant> book;
+        QMap<QString, QVariant> dataItem;
 
-        book["id"] = query.value("id");
-        book["title"] = query.value("title");
-        book["isbn"] = query.value("isbn");
-        book["year"] = query.value("year");
-        book["publisher_id"] = query.value("publisher_id");
-        book["publisher_name"] = query.value("publisher_name");
-        book["authors"] = query.value("authors");
-        book["categories"] = query.value("categories");
+        dataItem["id"] = query.value("id");
+        dataItem["title"] = query.value("title");
+        dataItem["isbn"] = query.value("isbn");
+        dataItem["year"] = query.value("year");
+        dataItem["publisher_id"] = query.value("publisher_id");
+        dataItem["publisher_name"] = query.value("publisher_name");
+        dataItem["authors"] = query.value("authors");
+        dataItem["categories"] = query.value("categories");
 
-        books.append(book);
+        allData.append(dataItem);
     }
 
-    qDebug() << "Загружено книг:" << books.size();
+    qDebug() << "Загружено данных:" << allData.size();
 
-    return books;
+    return allData;
 }
-
-

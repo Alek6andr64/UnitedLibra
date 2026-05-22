@@ -3,9 +3,23 @@
 #include <QTabWidget>
 #include <QDebug>
 
-Workspace::Workspace(QWidget *parent) : QWidget(parent)
+Workspace::Workspace(QWidget *parent, DataType dataType) : QWidget(parent), pageDataType(dataType)
 {
     setupUI();
+}
+
+QString Workspace::getDataTypeName() const
+{
+    switch (pageDataType) {
+    case Books:         return "Книги";
+    case Authors:       return "Авторы";
+    case Publishers:    return "Издатели";
+    case BookCopies:    return "Копии книг";
+    case Loans:         return "Выдачи";
+    case Fines:         return "Штрафы";
+    case Users:         return "Пользователи";
+    default:            return "Данные";
+    }
 }
 
 void Workspace::setupUI()
@@ -43,7 +57,7 @@ void Workspace::setupFilters() {
 void Workspace::setupMainButtons() {
     // Основные кнопки
     QHBoxLayout *dbButtonsLayout = new QHBoxLayout();
-    QLabel *categoryLabel = new QLabel("Книги", this);
+    QLabel *categoryLabel = new QLabel(getDataTypeName(), this);
     QPushButton *addBtn = new QPushButton("Добавить", this);
     QPushButton *openBtn = new QPushButton("Просмотреть", this);
     QPushButton *deleteBtn = new QPushButton("Удалить", this);
@@ -71,11 +85,12 @@ void Workspace::setupDataArea() {
 
     // Подключение к базе данных и получение таблицы
     db.connect();
-    books = db.getBooks(filterText);
+
+    allData = db.getData(filterText);
 
     // Создание линий данных и их заполнение
     generateDataLines(10, 1);
-    fillDataLines(10, 1, books);
+    fillDataLines(10, 1, allData);
 
     // Убираем отступы между линиями данных
     dataArea->setSpacing(0);
@@ -88,13 +103,13 @@ void Workspace::setupDataArea() {
 void Workspace::setupPagesButtons() {
 
     // Вычисляем максимум страниц
-    maxPages = books.size() / 10;
-    if ((books.size() % 10) != 0)
+    maxPages = allData.size() / 10;
+    if ((allData.size() % 10) != 0)
         maxPages++;
 
     // Вычисляем доступные записи
-    currentResults = books.size();
-    maxResults = books.size();
+    currentResults = allData.size();
+    maxResults = allData.size();
 
     // Кнопки перемещения по страницам
     QHBoxLayout *pagesLayout = new QHBoxLayout();
@@ -162,7 +177,7 @@ void Workspace::generateDataLines(int dataCount, int currentPage)
     }
 }
 
-void Workspace::fillDataLines(int dataCount, int currentPage, QVector<QMap<QString, QVariant>> books)
+void Workspace::fillDataLines(int dataCount, int currentPage, QVector<QMap<QString, QVariant>> allData)
 {
     // Вычисление количества строк данных
     int initialData = (dataCount * currentPage) - dataCount;
@@ -170,13 +185,13 @@ void Workspace::fillDataLines(int dataCount, int currentPage, QVector<QMap<QStri
 
     for (int x = initialData; x < dataCount * currentPage; x++) {
         if (y < allDataLines.size()) {
-            if (x < books.size()) {
+            if (x < allData.size()) {
                 // Заполняем линии данными
-                int bookId = books[x]["id"].toInt();
-                allDataLines[y]->setData(books[x], bookId);
+                int dataId = allData[x]["id"].toInt();
+                allDataLines[y]->setData(allData[x], dataId);
 
                 // Восстанавливаем состояние чекбокса
-                bool isSelected = selectedBookIds.contains(bookId);
+                bool isSelected = selectedDataIds.contains(dataId);
                 allDataLines[y]->setSelected(isSelected);
                 allDataLines[y]->setChecked(isSelected);
             } else {
@@ -196,8 +211,9 @@ void Workspace::fillDataLines(int dataCount, int currentPage, QVector<QMap<QStri
 
 void Workspace::updateAvailableResults()
 {
-    currentResults = books.size();
-    maxResults = db.getBooks("").size();
+    currentResults = allData.size();
+    maxResults = db.getData("").size();
+
     pageInfo->setText(QString("Показано %1 из %2").arg(currentResults).arg(maxResults));
 
     emit dataChanged();
@@ -205,11 +221,11 @@ void Workspace::updateAvailableResults()
 
 void Workspace::onAddClicked()
 {
-    // Открываем вкладку для новой книги
+    // Открываем вкладку для новых данных
     openEditingTab(-1, QMap<QString, QVariant>(), true);
 }
 
-void Workspace::openEditingTab(int bookId, const QMap<QString, QVariant> &bookData, bool newBook)
+void Workspace::openEditingTab(int dataId, const QMap<QString, QVariant> &dataMap, bool isNewData)
 {
     // Находим родительский QTabWidget
     QTabWidget *tabWidget = findParentTabWidget();
@@ -221,16 +237,16 @@ void Workspace::openEditingTab(int bookId, const QMap<QString, QVariant> &bookDa
     }
 
     // Определяем название вкладки
-    QString tabKey = newBook ? "✏️ Новая книга" : QString::number(bookId);
+    QString tabKey = isNewData ? "✏️ Новые данные" : QString::number(dataId);
 
     // Проверяем, не открыта ли уже такая вкладка
     for (int i = 0; i < tabWidget->count(); ++i) {
         DataEditing *existingTab = qobject_cast<DataEditing*>(tabWidget->widget(i));
         if (existingTab) {
-            if (newBook && tabWidget->tabText(i).contains("✏️ Новая книга")) {
+            if (isNewData && tabWidget->tabText(i).contains("✏️ Новые данные")) {
                 tabWidget->setCurrentIndex(i);
                 return;
-            } else if (!newBook && tabWidget->tabText(i).contains(tabKey)) {
+            } else if (!isNewData && tabWidget->tabText(i).contains(tabKey)) {
                 tabWidget->setCurrentIndex(i);
                 return;
             }
@@ -241,11 +257,11 @@ void Workspace::openEditingTab(int bookId, const QMap<QString, QVariant> &bookDa
     DataEditing *editTab = new DataEditing(tabWidget);
 
     // Загружаем данные
-    if (newBook) {
-        qDebug() << "Открыта вкладка создания для книги";
+    if (isNewData) {
+        qDebug() << "Открыта вкладка создания для данных типа:" << getDataTypeName();
     } else {
-        editTab->loadBookData(bookId, bookData);
-        qDebug() << "Открыта вкладка редактирования для книги ID:" << bookId;
+        editTab->loadData(dataId, dataMap);
+        qDebug() << "Открыта вкладка редактирования для данных ID:" << dataId << "тип:" << getDataTypeName();
     }
 
     // Подключаем сигнал сохранения для обновления основной таблицы
@@ -262,10 +278,14 @@ void Workspace::openEditingTab(int bookId, const QMap<QString, QVariant> &bookDa
 
     // Записываем заголовок вкладки
     QString tabTitle;
-    if (newBook) {
-        tabTitle = "✏️ Новая книга";
+    if (isNewData) {
+        tabTitle = QString("✏️ Новая %1").arg(getDataTypeName());
     } else {
-        tabTitle = QString("✏️ %1").arg(bookData["title"].toString().left(25));
+        QString displayName = dataMap["title"].toString();
+        if (displayName.isEmpty()) {
+            displayName = dataMap["name"].toString();
+        }
+        tabTitle = QString("✏️ %1").arg(displayName.left(25));
     }
 
     // Добавляем вкладку
@@ -275,29 +295,29 @@ void Workspace::openEditingTab(int bookId, const QMap<QString, QVariant> &bookDa
 
 void Workspace::onOpenClicked()
 {
-    // Проверяем, выбрана ли хотя бы одна книга
-    if (selectedBookIds.isEmpty()) {
-        MessageBox::showInfo(this, "Информация", "Пожалуйста, выберите книгу для просмотра/редактирования.");
+    // Проверяем, выбрана ли хотя бы одна запись
+    if (selectedDataIds.isEmpty()) {
+        MessageBox::showInfo(this, "Информация", QString("Пожалуйста, выберите %1 для просмотра/редактирования.").arg(getDataTypeName().toLower()));
         return;
     }
 
-    for (int bookId : selectedBookIds) {
-        // Находим данные книги в текущем списке
-        QMap<QString, QVariant> bookData;
+    for (int dataId : selectedDataIds) {
+        // Находим данные в текущем списке
+        QMap<QString, QVariant> dataMap;
         bool found = false;
 
-        for (const auto &book : books) {
-            if (book["id"].toInt() == bookId) {
-                bookData = book;
+        for (const auto &data : allData) {
+            if (data["id"].toInt() == dataId) {
+                dataMap = data;
                 found = true;
                 break;
             }
         }
 
         if (found) {
-            openEditingTab(bookId, bookData, false);
+            openEditingTab(dataId, dataMap, false);
         } else {
-            QMessageBox::warning(this, "Ошибка", "Не удалось найти данные выбранной книги.");
+            QMessageBox::warning(this, "Ошибка", "Не удалось найти выбранные данные.");
         }
     }
 }
@@ -321,23 +341,30 @@ QTabWidget* Workspace::findParentTabWidget() const
 void Workspace::onDeleteClicked()
 {
     // Вызываем окно предупреждения и получаем результат ее нажатия
-    int result = MessageBox::showConfirmation(this, "Предупреждение", "Вы действительно хотите удалить эти данные?", "Это действие нельзя отменить");
-    int booksToDelete = selectedBookIds.size();
+    int result = MessageBox::showConfirmation(this, "Предупреждение",
+                                              QString("Вы действительно хотите удалить эти %1?").arg(getDataTypeName().toLower()),
+                                              "Это действие нельзя отменить");
+    int dataToDelete = selectedDataIds.size();
 
     // Если пользователь согласен то удаляем записи
     if (result == QMessageBox::Yes) {
-        QVector<int> deletedBooksIDs = db.deleteBooks(selectedBookIds);
-        int deletedBooksCount = deletedBooksIDs.size();
+        QVector<int> deletedDataIds;
+
+        deletedDataIds = db.deleteData(selectedDataIds);
+
+
+        int deletedDataCount = deletedDataIds.size();
 
         // Вызываем ошибку если что то пошло не так
-        if (deletedBooksCount != booksToDelete) {
-            MessageBox::showError(this, "Ошибка", "При удалении данных произошла ошибка", QString("Удалено %1 из %2 данных").arg(deletedBooksCount).arg(booksToDelete));
+        if (deletedDataCount != dataToDelete) {
+            MessageBox::showError(this, "Ошибка", "При удалении данных произошла ошибка",
+                                  QString("Удалено %1 из %2 данных").arg(deletedDataCount).arg(dataToDelete));
         }
 
         // Удаляем из вектора записи
-        for (int id : deletedBooksIDs) {
-            auto it = std::remove(selectedBookIds.begin(), selectedBookIds.end(), id);
-            selectedBookIds.erase(it, selectedBookIds.end());
+        for (int id : deletedDataIds) {
+            auto it = std::remove(selectedDataIds.begin(), selectedDataIds.end(), id);
+            selectedDataIds.erase(it, selectedDataIds.end());
         }
 
         // Обновляем данные
@@ -347,8 +374,9 @@ void Workspace::onDeleteClicked()
 
 void Workspace::updateData()
 {
-    books = db.getBooks(filterText);
-    fillDataLines(10, currentPage, books);
+    allData = db.getData(filterText);
+
+    fillDataLines(10, currentPage, allData);
     updateAvailableResults();
     onUpdatePagesButtons();
     emit dataChanged();
@@ -464,16 +492,16 @@ void Workspace::onSearchTextChanged(const QString &text)
 {
     filterText = text;
     // Поиск
-    qDebug() << filterText;
+    qDebug() << "Поиск по типу данных" << getDataTypeName() << ":" << filterText;
 
-    books = db.getBooks(filterText);
+    allData = db.getData(filterText);
 
     if (pageInfo) {
         updateAvailableResults();
     }
 
-    maxPages = books.size() / 10;
-    if ((books.size() % 10) != 0)
+    maxPages = allData.size() / 10;
+    if ((allData.size() % 10) != 0)
         maxPages++;
 
     currentPage = 1;
@@ -482,16 +510,16 @@ void Workspace::onSearchTextChanged(const QString &text)
     updateData();
 }
 
-void Workspace::onDataLineToggled(bool checked, int bookId)
+void Workspace::onDataLineToggled(bool checked, int dataId)
 {
-    // Если чекбокс выключен, то добавляем id книги в массив, если включена, то удаляем оттуда.
+    // Если чекбокс выключен, то добавляем id данных в массив, если включена, то удаляем оттуда.
     if (checked) {
-        if (!selectedBookIds.contains(bookId)) {
-            selectedBookIds.append(bookId);
+        if (!selectedDataIds.contains(dataId)) {
+            selectedDataIds.append(dataId);
         }
     } else {
-        selectedBookIds.removeAll(bookId);
+        selectedDataIds.removeAll(dataId);
     }
 
-    qDebug() << "Выбранные id книг:" << selectedBookIds;
+    qDebug() << "Выбранные id данных типа" << getDataTypeName() << ":" << selectedDataIds;
 }
