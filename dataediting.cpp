@@ -172,33 +172,46 @@ bool DataEditing::validateInputs()
 bool DataEditing::saveToDatabase()
 {
     // Получаем основные данные книги
-    QMap<QString, QVariant> updatedBookData;
+    QMap<QString, QVariant> bookData;
+    bookData["id"] = currentBookId;
+    bookData["title"] = titleEdit->text().trimmed();
+    bookData["isbn"] = isbnEdit->text().trimmed();
+    bookData["year"] = yearSpin->value();
+    bookData["publisher_id"] = publisherCombo->currentData().toInt();
+    bookData["copy_count"] = copiesSpin->value();
 
-    updatedBookData["id"] = currentBookId;
-    updatedBookData["title"] = titleEdit->text().trimmed();
-    updatedBookData["isbn"] = isbnEdit->text().trimmed();
-    updatedBookData["year"] = yearSpin->value();
-    updatedBookData["publisher_id"] = publisherCombo->currentData().toInt();
-    updatedBookData["copy_count"] = copiesSpin->value();
+    // Выясняем добавляется или обновляется книга
+    bool isNewBook = (currentBookId == -1);
+    bool success;
 
-    // Обновляем основную информацию о книге
-    if (!db.updateBook(updatedBookData)) {
-        MessageBox::showError(this, "Ошибка", "Не удалось обновить данные книги");
+    // Сохраняем основную информацию о книге
+    if (isNewBook) {
+        currentBookId = db.addBook(bookData);
+        success = (currentBookId != -1);
+    } else {
+        success = db.updateBook(bookData);
+    }
+
+    if (!success) {
+        QString errorMsg = isNewBook ? "Не удалось добавить данные книги" : "Не удалось обновить данные книги";
+        MessageBox::showError(this, "Ошибка", errorMsg);
         return false;
     }
 
-    // Обновляем авторов
+    // Сохраняем авторов
     if (!authorEdit->selectedTags.isEmpty()) {
         if (!db.updateBookAuthors(currentBookId, authorEdit->selectedTags)) {
-            MessageBox::showError(this, "Ошибка", "Не удалось обновить авторов книги");
+            QString errorMsg = isNewBook ? "Не удалось добавить авторов книги" : "Не удалось обновить авторов книги";
+            MessageBox::showError(this, "Ошибка", errorMsg);
             return false;
         }
     }
 
-    // Обновляем жанры (если есть выбранные)
+    // Сохраняем жанры
     if (!categoryEdit->selectedTags.isEmpty()) {
         if (!db.updateBookCategories(currentBookId, categoryEdit->selectedTags)) {
-            MessageBox::showError(this, "Ошибка", "Не удалось обновить жанры книги");
+            QString errorMsg = isNewBook ? "Не удалось добавить жанры книги" : "Не удалось обновить жанры книги";
+            MessageBox::showError(this, "Ошибка", errorMsg);
             return false;
         }
     }

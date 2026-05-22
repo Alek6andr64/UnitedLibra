@@ -67,7 +67,7 @@ private:
     QPushButton *cancelBtn;
 
     // Храним ID редактируемой книги
-    int currentBookId;
+    int currentBookId = -1;
 };
 
 #endif
