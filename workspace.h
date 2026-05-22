@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QTabWidget>
 
 class Workspace : public QWidget
 {
@@ -41,7 +42,10 @@ private:
     // Обновление линий данных
     void updateData();
     // Открытие вкладки редактирования
-    void openEditingTab(int bookId, const QMap<QString, QVariant> &bookData);
+    void openEditingTab(int bookId, const QMap<QString, QVariant> &bookData, bool newBook);
+
+    // Метод для поиска QTabWidget
+    QTabWidget* findParentTabWidget() const;
 
     QVBoxLayout *mainLayout; // Основное рабочее пространство
     QVBoxLayout *dataArea;  // Для хранения строк данных
