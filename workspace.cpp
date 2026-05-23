@@ -5,6 +5,7 @@
 
 Workspace::Workspace(QWidget *parent, DataType dataType) : QWidget(parent), pageDataType(dataType)
 {
+    db = new BookModel(this);
     setupUI();
 }
 
@@ -83,10 +84,7 @@ void Workspace::setupDataArea() {
     // Область данных
     dataArea = new QVBoxLayout();
 
-    // Подключение к базе данных и получение таблицы
-    db.connect();
-
-    allData = db.getData(filterText);
+    allData = db->getData(filterText);
 
     // Создание линий данных и их заполнение
     generateDataLines(10, 1);
@@ -212,7 +210,7 @@ void Workspace::fillDataLines(int dataCount, int currentPage, QVector<QMap<QStri
 void Workspace::updateAvailableResults()
 {
     currentResults = allData.size();
-    maxResults = db.getData("").size();
+    maxResults = db->getData("").size();
 
     pageInfo->setText(QString("Показано %1 из %2").arg(currentResults).arg(maxResults));
 
@@ -350,8 +348,7 @@ void Workspace::onDeleteClicked()
     if (result == QMessageBox::Yes) {
         QVector<int> deletedDataIds;
 
-        deletedDataIds = db.deleteData(selectedDataIds);
-
+        deletedDataIds = db->deleteData(selectedDataIds);
 
         int deletedDataCount = deletedDataIds.size();
 
@@ -374,7 +371,7 @@ void Workspace::onDeleteClicked()
 
 void Workspace::updateData()
 {
-    allData = db.getData(filterText);
+    allData = db->getData(filterText);
 
     fillDataLines(10, currentPage, allData);
     updateAvailableResults();
@@ -494,7 +491,7 @@ void Workspace::onSearchTextChanged(const QString &text)
     // Поиск
     qDebug() << "Поиск по типу данных" << getDataTypeName() << ":" << filterText;
 
-    allData = db.getData(filterText);
+    allData = db->getData(filterText);
 
     if (pageInfo) {
         updateAvailableResults();

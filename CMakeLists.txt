@@ -27,6 +27,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         workspace.h workspace.cpp
         sidebar.h sidebar.cpp
         database.h database.cpp
+        databasemodels.h databasemodels.cpp
         dataline.cpp dataline.h
         messagebox.h messagebox.cpp
         dataediting.h dataediting.cpp

@@ -3,6 +3,7 @@
 
 DataEditing::DataEditing(QWidget *parent) : QWidget(parent)
 {
+    db = new BookModel(this);
     setupUI();
 }
 
@@ -54,7 +55,7 @@ void DataEditing::setupForm()
     publisherCombo->setEditable(true);
 
     // Загружаем издательства из БД
-    QSqlQuery query = db.selectFromTable("publisher");
+    QSqlQuery query = db->selectFromTable("publisher");
     publisherCombo->addItem("Не указано", -1);
     while (query.next()) {
         publisherCombo->addItem(query.value(1).toString(), query.value(0).toInt());
@@ -62,14 +63,14 @@ void DataEditing::setupForm()
     formLayout->addRow("Издательство:", publisherCombo);
 
     // Автор
-    query = db.selectFromTable("authors");
+    query = db->selectFromTable("authors");
 
     authorEdit = new TagEditor(this, "Введите автора и нажмите Enter или Пробел...");
     authorEdit->setupData(query);
     formLayout->addRow("Автор:", authorEdit);
 
     // Жанры
-    query = db.selectFromTable("categories");
+    query = db->selectFromTable("categories");
 
     categoryEdit = new TagEditor(this, "Введите жанр и нажмите Enter или Пробел...");
     categoryEdit->setupData(query);
@@ -142,7 +143,6 @@ void DataEditing::loadData(int dataId, const QMap<QString, QVariant> &dataData)
 
     authorEdit->setupTags(authors);
     categoryEdit->setupTags(categories);
-
 }
 
 bool DataEditing::validateInputs()
@@ -186,10 +186,10 @@ bool DataEditing::saveToDatabase()
 
     // Сохраняем основную информацию о книге
     if (isNewData) {
-        currentDataId = db.addData(dataData);
+        currentDataId = db->addData(dataData);
         success = (currentDataId != -1);
     } else {
-        success = db.updateData(dataData);
+        success = db->updateData(dataData);
     }
 
     if (!success) {
@@ -200,7 +200,7 @@ bool DataEditing::saveToDatabase()
 
     // Сохраняем авторов
     if (!authorEdit->selectedTags.isEmpty()) {
-        if (!db.updateDataAuthors(currentDataId, authorEdit->selectedTags)) {
+        if (!db->updateBookAuthors(currentDataId, authorEdit->selectedTags)) {
             QString errorMsg = isNewData ? "Не удалось добавить авторов книги" : "Не удалось обновить авторов книги";
             MessageBox::showError(this, "Ошибка", errorMsg);
             return false;
@@ -209,7 +209,7 @@ bool DataEditing::saveToDatabase()
 
     // Сохраняем жанры
     if (!categoryEdit->selectedTags.isEmpty()) {
-        if (!db.updateDataCategories(currentDataId, categoryEdit->selectedTags)) {
+        if (!db->updateBookCategories(currentDataId, categoryEdit->selectedTags)) {
             QString errorMsg = isNewData ? "Не удалось добавить жанры книги" : "Не удалось обновить жанры книги";
             MessageBox::showError(this, "Ошибка", errorMsg);
             return false;
@@ -240,7 +240,6 @@ void DataEditing::onCancelClicked()
         emit editingFinished();
     }
 }
-
 
 void DataEditing::setupDesign() {
     setStyleSheet(
@@ -284,4 +283,3 @@ void DataEditing::setupDesign() {
         "}"
         );
 }
-

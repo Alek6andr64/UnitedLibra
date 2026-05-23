@@ -2,7 +2,6 @@
 #include "./ui_mainwindow.h"
 #include "workspace.h"
 #include "sidebar.h"
-#include "database.h"
 #include "tabs.h"
 
 #include <QHBoxLayout>
@@ -34,8 +33,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     setCentralWidget(central);
 
-    database = new Database();
-    database->connect();
 }
 
 MainWindow::~MainWindow()

@@ -2,6 +2,7 @@
 #define WORKSPACE_H
 
 #include "database.h"
+#include "databasemodels.h"
 #include "dataline.h"
 #include "messagebox.h"
 #include <QWidget>
@@ -65,7 +66,7 @@ private:
 
     QVBoxLayout *mainLayout; // Основное рабочее пространство
     QVBoxLayout *dataArea;  // Для хранения строк данных
-    Database db;
+    BookModel *db;
     QVector<QMap<QString, QVariant>> allData; // Загруженные из базы данных данные
     QLabel *pageInfo = nullptr;
 

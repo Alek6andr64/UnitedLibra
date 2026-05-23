@@ -4,34 +4,33 @@
 #include <QObject>
 #include <QSqlQuery>
 #include <QSqlError>
-#include <QSqlTableModel>
+#include <QSqlDatabase>
+#include <QMap>
+#include <QVector>
+#include <QDebug>
 
-class Database : public QObject
+#include "databasemodels.h"
+
+// Enum для типов данных
+enum class DataModelType {
+    Books,      // Книги
+    Authors,    // Авторы
+    Publishers, // Издатели
+    BookCopies, // Копии книг
+    Loans,      // Выдачи
+    Fines,      // Штрафы
+    Users       // Пользователи
+};
+
+class DatabaseFactory
 {
-    Q_OBJECT
-
 public:
-    explicit Database(QObject *parent = nullptr);
-    ~Database();
+    // Метод создания модели по типу
+    static DataModel* createModel(DataModelType type, QObject *parent = nullptr);
 
-    bool connect();
-    void disconnect();
-
-    bool createTables();
-
-    QSqlQuery selectFromTable(const QString &tableName, const QStringList &fields = {"id", "name"}, const QString &orderByField = "name");
-
-    int addData(const QMap<QString, QVariant> &dataMap);
-    bool updateData(const QMap<QString, QVariant> &updatedDataMap);
-    bool updateDataAuthors(int dataId, const QVector<int> &authorIds);
-    bool updateDataCategories(int dataId, const QVector<int> &categoryIds);
-
-    QVector<int> deleteData(QVector<int> ids);
-    QVector<QMap<QString, QVariant>> getData(const QString &text);
-
-private:
-    QSqlDatabase db;
-    QSqlTableModel *model;
+    // Методы для подключения к базе данных
+    static bool connectDatabase(const QString &connectionName = "default");
+    static void disconnectDatabase(const QString &connectionName = "default");
 };
 
 #endif

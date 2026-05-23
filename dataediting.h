@@ -4,6 +4,7 @@
 #include "messagebox.h"
 #include "tageditor.h"
 #include "database.h"
+#include "databasemodels.h"
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -47,7 +48,7 @@ private:
     bool validateInputs();
     bool saveToDatabase();
 
-    Database db;
+    BookModel *db;
 
     QVBoxLayout *mainLayout;
     QGroupBox *formGroup;

@@ -13,12 +13,7 @@ int main(int argc, char *argv[])
     w.show();
     return QCoreApplication::exec();
 
-    Database db;
-
-    // Подключаемся к БД
-    if (!db.connect()) {
-        return 1;
-    }
+    DatabaseFactory::connectDatabase();
 
     return 0;
 }
