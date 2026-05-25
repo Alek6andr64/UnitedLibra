@@ -72,6 +72,7 @@ void MessageBox::showInfo(QWidget *parent, const QString &title, const QString &
     QMessageBox msgBox(parent);
     msgBox.setIcon(QMessageBox::Information);
     msgBox.setWindowTitle(title);
+    msgBox.setText(text);
 
     // Выводим окно
     msgBox.exec();

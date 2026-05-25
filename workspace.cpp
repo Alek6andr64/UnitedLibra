@@ -295,7 +295,7 @@ void Workspace::onOpenClicked()
 {
     // Проверяем, выбрана ли хотя бы одна запись
     if (selectedDataIds.isEmpty()) {
-        MessageBox::showInfo(this, "Информация", QString("Пожалуйста, выберите %1 для просмотра/редактирования.").arg(getDataTypeName().toLower()));
+        MessageBox::showInfo(this, "Информация", "Пожалуйста, выберите данные для просмотра/редактирования.");
         return;
     }
 
@@ -338,34 +338,41 @@ QTabWidget* Workspace::findParentTabWidget() const
 
 void Workspace::onDeleteClicked()
 {
-    // Вызываем окно предупреждения и получаем результат ее нажатия
-    int result = MessageBox::showConfirmation(this, "Предупреждение",
-                                              QString("Вы действительно хотите удалить эти %1?").arg(getDataTypeName().toLower()),
-                                              "Это действие нельзя отменить");
-    int dataToDelete = selectedDataIds.size();
+    // Проверяем, выбрана ли хотя бы одна запись
+    if (selectedDataIds.isEmpty()) {
+        MessageBox::showInfo(this, "Информация", "Пожалуйста, выберите данные для удаления.");
+        return;
+    } else {
+        // Вызываем окно предупреждения и получаем результат ее нажатия
+        int result = MessageBox::showConfirmation(this, "Предупреждение",
+                                                  QString("Вы действительно хотите удалить эти %1?").arg(getDataTypeName().toLower()),
+                                                  "Это действие нельзя отменить");
 
-    // Если пользователь согласен то удаляем записи
-    if (result == QMessageBox::Yes) {
-        QVector<int> deletedDataIds;
+        int dataToDelete = selectedDataIds.size();
 
-        deletedDataIds = db->deleteData(selectedDataIds);
+        // Если пользователь согласен то удаляем записи
+        if (result == QMessageBox::Yes) {
+            QVector<int> deletedDataIds;
 
-        int deletedDataCount = deletedDataIds.size();
+            deletedDataIds = db->deleteData(selectedDataIds);
 
-        // Вызываем ошибку если что то пошло не так
-        if (deletedDataCount != dataToDelete) {
-            MessageBox::showError(this, "Ошибка", "При удалении данных произошла ошибка",
-                                  QString("Удалено %1 из %2 данных").arg(deletedDataCount).arg(dataToDelete));
+            int deletedDataCount = deletedDataIds.size();
+
+            // Вызываем ошибку если что то пошло не так
+            if (deletedDataCount != dataToDelete) {
+                MessageBox::showError(this, "Ошибка", "При удалении данных произошла ошибка",
+                                      QString("Удалено %1 из %2 данных").arg(deletedDataCount).arg(dataToDelete));
+            }
+
+            // Удаляем из вектора записи
+            for (int id : deletedDataIds) {
+                auto it = std::remove(selectedDataIds.begin(), selectedDataIds.end(), id);
+                selectedDataIds.erase(it, selectedDataIds.end());
+            }
+
+            // Обновляем данные
+            updateData();
         }
-
-        // Удаляем из вектора записи
-        for (int id : deletedDataIds) {
-            auto it = std::remove(selectedDataIds.begin(), selectedDataIds.end(), id);
-            selectedDataIds.erase(it, selectedDataIds.end());
-        }
-
-        // Обновляем данные
-        updateData();
     }
 }
 
