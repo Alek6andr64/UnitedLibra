@@ -19,7 +19,6 @@ class Tag : public QWidget
 public:
     explicit Tag(int id, const QString& name, QWidget* parent = nullptr);
     int id() const { return dataId; }
-    void setupStyle();
 
 signals:
     // Сигнал для удаления тега
@@ -59,7 +58,6 @@ private:
     // Методы ответственные за инициализацию интерфейса и логики
     void setupAutocompletion();
     void addTagOnLine(int id, const QString& name);
-    void setupStyle();
 
     QHBoxLayout* tagEditorLayout;           // Горизонтальный layout для тегов и поля ввода
     QLineEdit* lineEdit;                    // Поле ввода текста

@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "database.h"
-
+#include <QFile>
+#include "stylesheetloader.h"
 #include <QApplication>
 #include <QDebug>
 
@@ -27,6 +28,13 @@ void printAllBooks(Database &db)
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    QFile file(":/styles/app.qss");
+    if (file.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(file.readAll());
+        a.setStyleSheet(styleSheet);
+        file.close();
+    }
 
     MainWindow w;
     w.show();

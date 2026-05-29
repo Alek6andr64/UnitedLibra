@@ -24,40 +24,16 @@ Tag::Tag(int id, const QString& name, QWidget* parent): QWidget(parent), dataId(
     connect(closeBtn, &QPushButton::clicked, this, &Tag::onCloseClicked);
     layout->addWidget(closeBtn);
 
-    // Применяем стили к контейнеру
-    setupStyle();
+    // Устанавливаем objectName для стилизации
+    tagWidget->setObjectName("tagWidget");
+    closeBtn->setObjectName("tagCloseBtn");
+    dataLabel->setObjectName("tagLabel");
 }
 
 void Tag::onCloseClicked() {
     // Удаляем кнопку, а потом и тег
     emit removeRequested(dataId);
     deleteLater();
-}
-
-void Tag::setupStyle() {
-    closeBtn->setStyleSheet("QPushButton { background: transparent; color: white; font-weight: bold; border: none; }"
-                            "QPushButton:hover { color: #413F3F; }");
-    QSize size = closeBtn->sizeHint();
-    closeBtn->setMaximumSize(size);
-
-    // Применяем стили к контейнеру
-    tagWidget->setStyleSheet(R"(
-        QWidget {
-            border: 1px solid #4a90e2;
-            border-radius: 6px;
-            background: #4a90e2;
-        }
-        QWidget:hover {
-            background: #357abd;
-            border-color: #357abd;
-        }
-    )");
-
-    // Делаем текст белым
-    dataLabel->setStyleSheet("QLabel { color: white; }");
-
-    // Курсор-рука для всего контейнера
-    tagWidget->setCursor(Qt::PointingHandCursor);
 }
 
 TagEditor::TagEditor(QWidget* parent, const QString& initialText): QWidget(parent) {
@@ -79,6 +55,7 @@ TagEditor::TagEditor(QWidget* parent, const QString& initialText): QWidget(paren
     // Поле ввода текста
     lineEdit = new QLineEdit(container);
     lineEdit->setPlaceholderText(initialText);
+    lineEdit->setObjectName("tagLineEdit");
 
     // Устанавливаем фильтр событий (для обработки клавиш)
     lineEdit->installEventFilter(this);
@@ -92,9 +69,6 @@ TagEditor::TagEditor(QWidget* parent, const QString& initialText): QWidget(paren
     // Добавляем поле ввода
     tagEditorLayout->addWidget(lineEdit);
     mainLayout->addWidget(container);
-
-    // Применяем стили
-    setupStyle();
 }
 
 void TagEditor::setupAutocompletion() {
@@ -127,6 +101,7 @@ void TagEditor::setupTags(QString& tags) {
     if (!tags.isEmpty()) {
         QStringList tagsList = tags.split(',');
         for (QString tag : tagsList) {
+            tag = tag.trimmed();
             if (allTags.contains(tag)) {
                 addTagOnLine(allTags[tag], tag);
             }
@@ -217,31 +192,4 @@ bool TagEditor::eventFilter(QObject* obj, QEvent* event) {
     }
 
     return false;
-}
-
-void TagEditor::setupStyle() {
-    // Стили для контейнера
-    findChild<QWidget*>("authorsContainer")->setStyleSheet(R"(
-        #authorsContainer {
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            background: white;
-        }
-        #authorsContainer:focus-within {
-            border-color: #66afe9;
-            outline: none;
-        }
-    )");
-
-    // Стили для поля ввода
-    lineEdit->setStyleSheet(R"(
-        QLineEdit {
-            border: none;
-            padding: 4px;
-            background: transparent;
-        }
-        QLineEdit:focus {
-            outline: none;
-        }
-    )");
 }
