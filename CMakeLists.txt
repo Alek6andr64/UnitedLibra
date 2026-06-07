@@ -34,6 +34,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         tageditor.h tageditor.cpp
         authdialog.h authdialog.cpp
         resources.qrc
+        stylesheetloader.h
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET UnitedLibra APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

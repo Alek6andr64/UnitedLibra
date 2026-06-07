@@ -1,15 +1,16 @@
 <RCC>
-    <qresource prefix="/icons">
-        <file>books.png</file>
-        <file>loans.png</file>
-        <file>fines.png</file>
-        <file>users.png</file>
-        <file>staff.png</file>
-        <file>logs.png</file>
-        <file>appearance.png</file>
-        <file>themes.png</file>
-        <file>account.png</file>
-        <file>help.png</file>
-        <file>avatar.png</file>
+    <qresource prefix="/">
+        <file>styles/app.qss</file>
+        <file>resources/book.svg</file>
+        <file>resources/hand_package.svg</file>
+        <file>resources/request_quote.svg</file>
+        <file>resources/badge.svg</file>
+        <file>resources/person_edit.svg</file>
+        <file>resources/print.svg</file>
+        <file>resources/palette.svg</file>
+        <file>resources/keyboard.svg</file>
+        <file>resources/settings.svg</file>
+        <file>resources/help.svg</file>
+        <file>resources/avatar.png</file>
     </qresource>
 </RCC>
